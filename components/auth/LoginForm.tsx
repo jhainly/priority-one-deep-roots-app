@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { confirmSignUp, fetchAuthSession, resendSignUpCode, signIn } from "aws-amplify/auth";
 import { configureAmplify } from "@/lib/amplifyClient";
@@ -12,6 +13,7 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const accountConfirmed = searchParams.get("account") === "confirmed";
+  const passwordReset = searchParams.get("password") === "reset";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmationCode, setConfirmationCode] = useState("");
@@ -113,6 +115,7 @@ export function LoginForm() {
       <div>
         <h1>{mode === "confirm" ? "Verify account" : "Sign in"}</h1>
         {accountConfirmed ? <p className="muted">Your account is verified. Sign in to continue.</p> : null}
+        {passwordReset ? <p className="muted">Your password has been reset. Sign in with your new password.</p> : null}
         {mode === "confirm" ? <p className="muted">Enter the code sent to your email to finish account setup.</p> : null}
       </div>
       <label className="field">
@@ -158,6 +161,9 @@ export function LoginForm() {
           {isResending ? "Sending..." : "Resend code"}
         </button>
       ) : null}
+      <Link className="button secondary" href="/reset-password">
+        Forgot password?
+      </Link>
     </form>
   );
 }
