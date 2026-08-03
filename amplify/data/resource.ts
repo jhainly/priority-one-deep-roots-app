@@ -1,6 +1,7 @@
 import { a, defineData, type ClientSchema } from "@aws-amplify/backend";
 import { joinGroupByCode } from "../functions/join-group-by-code/resource.ts";
 import { manageAdminUsers } from "../functions/manage-admin-users/resource.ts";
+import { syncDisplayName } from "../functions/sync-display-name/resource.ts";
 import { syncUserScore } from "../functions/sync-user-score/resource.ts";
 
 const schema = a.schema({
@@ -55,6 +56,11 @@ const schema = a.schema({
     cumulativeScore: a.integer().required()
   }),
 
+  SyncDisplayNameResult: a.customType({
+    displayName: a.string().required(),
+    updatedScoreCount: a.integer().required()
+  }),
+
   syncUserScore: a
     .mutation()
     .arguments({
@@ -65,6 +71,15 @@ const schema = a.schema({
     .returns(a.ref("SyncUserScoreResult"))
     .authorization((allow) => [allow.authenticated()])
     .handler(a.handler.function(syncUserScore)),
+
+  syncDisplayName: a
+    .mutation()
+    .arguments({
+      displayName: a.string().required()
+    })
+    .returns(a.ref("SyncDisplayNameResult"))
+    .authorization((allow) => [allow.authenticated()])
+    .handler(a.handler.function(syncDisplayName)),
 
   UserProfile: a
     .model({

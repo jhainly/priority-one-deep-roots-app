@@ -2,7 +2,7 @@
 
 import type { UserGroupSummary } from "@/lib/services/dataClient";
 
-const STORAGE_KEY = "mgj_selected_group_id";
+const STORAGE_KEY = "deep_roots_selected_group_id";
 
 export function getSelectedGroupId(): string | null {
   return sessionStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(STORAGE_KEY);

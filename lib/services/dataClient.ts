@@ -18,7 +18,7 @@ import { calculateScores, sectionKey, type CompletedSectionKey, type ScoreSummar
 import type { Schema } from "@/amplify/data/resource";
 import type { JournalExportInput } from "@/lib/pdfExport";
 import type { SectionProgress } from "@/types/domain";
-import type { Program, ProgramDay, ProgramImportPreview, ProgramWeek } from "@/types/program";
+import type { Program, ProgramDay, ProgramImportPreview, ProgramSection, ProgramWeek } from "@/types/program";
 
 type DataClient = ReturnType<typeof generateClient<Schema>>;
 type JournalAnswerDescriptor = {
@@ -123,6 +123,7 @@ export type JournalDayState = {
   expectedProgressIdsBySectionId: Record<string, string>;
   failedAnswerKeys: string[];
   needsReauth: boolean;
+  sectionPointsEarned: Record<string, number>;
   warning?: string;
 };
 export type CurrentUserProfile = {
@@ -269,7 +270,7 @@ export async function updateCurrentUserDisplayName(displayName: string): Promise
 
     await Promise.all([
       updateOwnMembershipDisplayNames(client, user.userId, normalizedDisplayName),
-      updateOwnScoreDisplayNames(client, user.userId, normalizedDisplayName),
+      syncOwnScoreDisplayNames(client, normalizedDisplayName),
       updateCognitoDisplayName(normalizedDisplayName)
     ]);
 
@@ -1057,68 +1058,268 @@ export type LeaderboardRow = {
   displayName: string;
   weeklyScore: number;
 };
+export type TeamLeaderboardRow = {
+  cumulativeScore: number;
+  groupId: string;
+  groupName: string;
+  weeklyScore: number;
+};
+export type LeaderboardStandings = {
+  individualRows: LeaderboardRow[];
+  teamRows: TeamLeaderboardRow[];
+};
 
 export async function listLeaderboard(input: {
   groupId: string;
+  programId: string;
+  programTitle: string;
   weekNumber: number;
-}): Promise<ServiceResult<LeaderboardRow[]>> {
+}): Promise<ServiceResult<LeaderboardStandings>> {
   try {
     await configureAmplify();
     const client = getDataClient();
-    const rows = await client.models.UserScore.list({
-      filter: {
-        groupId: {
-          eq: input.groupId
+    const [groupScores, programScores, groups, activeWeekRows] = await Promise.all([
+      client.models.UserScore.list({
+        filter: {
+          groupId: {
+            eq: input.groupId
+          },
+          programId: {
+            eq: input.programId
+          }
         }
-      }
-    });
-    const rowsByUser = new Map<
-      string,
-      LeaderboardRow & {
-        latestUpdatedAt: string;
-        weeklyUpdatedAt: string;
-      }
-    >();
+      }),
+      client.models.UserScore.list(),
+      client.models.Group.list(),
+      client.models.GroupProgramWeek.list({
+        filter: {
+          isActive: {
+            eq: true
+          }
+        }
+      })
+    ]);
 
-    for (const row of rows.data) {
-      const current =
-        rowsByUser.get(row.userId) ??
-        ({
-          cumulativeScore: 0,
-          displayName: row.displayName,
-          latestUpdatedAt: "",
-          weeklyScore: 0,
-          weeklyUpdatedAt: ""
-        } satisfies LeaderboardRow & { latestUpdatedAt: string; weeklyUpdatedAt: string });
-
-      if (row.updatedAt > current.latestUpdatedAt) {
-        current.displayName = row.displayName;
-        current.latestUpdatedAt = row.updatedAt;
-      }
-
-      current.cumulativeScore = Math.max(current.cumulativeScore, row.cumulativeScore);
-
-      if (row.weekNumber === input.weekNumber && row.updatedAt >= current.weeklyUpdatedAt) {
-        current.weeklyScore = row.weeklyScore;
-        current.weeklyUpdatedAt = row.updatedAt;
-      }
-
-      rowsByUser.set(row.userId, current);
-    }
+    const individualRows = buildIndividualLeaderboardRows(groupScores.data, input.weekNumber);
+    const teamRows = buildTeamLeaderboardRows(
+      programScores.data,
+      groups.data,
+      activeWeekRows.data,
+      input.weekNumber,
+      input.programId,
+      input.programTitle
+    );
 
     return {
       ok: true,
-      data: Array.from(rowsByUser.values())
-        .map(({ cumulativeScore, displayName, weeklyScore }) => ({
-          cumulativeScore,
-          displayName,
-          weeklyScore
-        }))
-        .sort((left, right) => right.weeklyScore - left.weeklyScore || left.displayName.localeCompare(right.displayName))
+      data: {
+        individualRows,
+        teamRows
+      }
     };
   } catch (error) {
     return serviceError(error);
   }
+}
+
+type ScoreListRow = {
+  cumulativeScore: number;
+  displayName: string;
+  groupId: string;
+  programId: string;
+  updatedAt: string;
+  userId: string;
+  weekNumber: number;
+  weeklyScore: number;
+};
+type GroupListRow = {
+  activeProgramId?: string | null;
+  groupId: string;
+  name: string;
+};
+type ActiveWeekListRow = {
+  groupId: string;
+  isActive: boolean;
+  programId: string;
+  programTitle: string;
+};
+type UserLeaderboardAccumulator = LeaderboardRow & {
+  latestUpdatedAt: string;
+  weeklyUpdatedAt: string;
+};
+type TeamUserScoreAccumulator = {
+  cumulativeScore: number;
+  groupId: string;
+  latestUpdatedAt: string;
+  weeklyScore: number;
+  weeklyUpdatedAt: string;
+};
+
+function buildIndividualLeaderboardRows(rows: Array<ScoreListRow | null>, weekNumber: number): LeaderboardRow[] {
+  const rowsByUser = new Map<string, UserLeaderboardAccumulator>();
+
+  for (const row of rows) {
+    if (!row) {
+      continue;
+    }
+
+    const current =
+      rowsByUser.get(row.userId) ??
+      ({
+        cumulativeScore: 0,
+        displayName: row.displayName,
+        latestUpdatedAt: "",
+        weeklyScore: 0,
+        weeklyUpdatedAt: ""
+      } satisfies UserLeaderboardAccumulator);
+
+    if (row.updatedAt > current.latestUpdatedAt) {
+      current.displayName = row.displayName;
+      current.latestUpdatedAt = row.updatedAt;
+    }
+
+    current.cumulativeScore = Math.max(current.cumulativeScore, row.cumulativeScore);
+
+    if (row.weekNumber === weekNumber && row.updatedAt >= current.weeklyUpdatedAt) {
+      current.weeklyScore = row.weeklyScore;
+      current.weeklyUpdatedAt = row.updatedAt;
+    }
+
+    rowsByUser.set(row.userId, current);
+  }
+
+  return Array.from(rowsByUser.values())
+    .map(({ cumulativeScore, displayName, weeklyScore }) => ({
+      cumulativeScore,
+      displayName,
+      weeklyScore
+    }))
+    .sort((left, right) => right.weeklyScore - left.weeklyScore || left.displayName.localeCompare(right.displayName));
+}
+
+function buildTeamLeaderboardRows(
+  scoreRows: Array<ScoreListRow | null>,
+  groupRows: Array<GroupListRow | null>,
+  activeWeekRows: Array<ActiveWeekListRow | null>,
+  weekNumber: number,
+  programId: string,
+  programTitle: string
+): TeamLeaderboardRow[] {
+  const groupNames = new Map<string, string>();
+  const teamScoresByGroup = new Map<string, TeamLeaderboardRow>();
+  const teamScoresByUser = new Map<string, TeamUserScoreAccumulator>();
+  const validScoreRows = scoreRows.filter((row): row is ScoreListRow => row != null);
+  const comparableProgramIds = getComparableProgramIds(activeWeekRows, programId, programTitle);
+  const comparableGroupIds = getComparableGroupIds(activeWeekRows, programId, programTitle);
+  const leaderboardScoreRows = validScoreRows.filter((row) => comparableProgramIds.has(row.programId));
+
+  for (const group of groupRows) {
+    if (!group) {
+      continue;
+    }
+
+    groupNames.set(group.groupId, group.name);
+
+    if (comparableGroupIds.has(group.groupId) || group.activeProgramId === programId) {
+      teamScoresByGroup.set(group.groupId, {
+        cumulativeScore: 0,
+        groupId: group.groupId,
+        groupName: group.name,
+        weeklyScore: 0
+      });
+    }
+  }
+
+  for (const row of leaderboardScoreRows) {
+    const userTeamKey = `${row.groupId}:${row.userId}`;
+    const current =
+      teamScoresByUser.get(userTeamKey) ??
+      ({
+        cumulativeScore: 0,
+        groupId: row.groupId,
+        latestUpdatedAt: "",
+        weeklyScore: 0,
+        weeklyUpdatedAt: ""
+      } satisfies TeamUserScoreAccumulator);
+
+    current.cumulativeScore = Math.max(current.cumulativeScore, row.cumulativeScore);
+
+    if (row.weekNumber === weekNumber && row.updatedAt >= current.weeklyUpdatedAt) {
+      current.weeklyScore = row.weeklyScore;
+      current.weeklyUpdatedAt = row.updatedAt;
+    }
+
+    current.latestUpdatedAt = row.updatedAt > current.latestUpdatedAt ? row.updatedAt : current.latestUpdatedAt;
+    teamScoresByUser.set(userTeamKey, current);
+
+    if (!teamScoresByGroup.has(row.groupId)) {
+      teamScoresByGroup.set(row.groupId, {
+        cumulativeScore: 0,
+        groupId: row.groupId,
+        groupName: groupNames.get(row.groupId) ?? row.groupId,
+        weeklyScore: 0
+      });
+    }
+  }
+
+  for (const userScore of teamScoresByUser.values()) {
+    const current =
+      teamScoresByGroup.get(userScore.groupId) ??
+      ({
+        cumulativeScore: 0,
+        groupId: userScore.groupId,
+        groupName: groupNames.get(userScore.groupId) ?? userScore.groupId,
+        weeklyScore: 0
+      } satisfies TeamLeaderboardRow);
+
+    current.cumulativeScore += userScore.cumulativeScore;
+    current.weeklyScore += userScore.weeklyScore;
+    teamScoresByGroup.set(userScore.groupId, current);
+  }
+
+  return Array.from(teamScoresByGroup.values()).sort(
+    (left, right) => right.weeklyScore - left.weeklyScore || left.groupName.localeCompare(right.groupName)
+  );
+}
+
+function getComparableProgramIds(
+  activeWeekRows: Array<ActiveWeekListRow | null>,
+  programId: string,
+  programTitle: string
+): Set<string> {
+  const programIds = new Set([programId]);
+
+  for (const row of activeWeekRows) {
+    if (!row?.isActive) {
+      continue;
+    }
+
+    if (row.programId === programId || (programTitle && row.programTitle === programTitle)) {
+      programIds.add(row.programId);
+    }
+  }
+
+  return programIds;
+}
+
+function getComparableGroupIds(
+  activeWeekRows: Array<ActiveWeekListRow | null>,
+  programId: string,
+  programTitle: string
+): Set<string> {
+  const groupIds = new Set<string>();
+
+  for (const row of activeWeekRows) {
+    if (!row?.isActive) {
+      continue;
+    }
+
+    if (row.programId === programId || (programTitle && row.programTitle === programTitle)) {
+      groupIds.add(row.groupId);
+    }
+  }
+
+  return groupIds;
 }
 
 export async function getCurrentUserScoreSummary(input: {
@@ -1132,7 +1333,7 @@ export async function getCurrentUserScoreSummary(input: {
     const user = await getCurrentUser();
 
     // Sync persists the leaderboard row. The dashboard display is derived from SectionProgress below.
-    const [, completedSections] = await Promise.all([
+    const [, sectionProgressPoints] = await Promise.all([
       requireSaved(
         client.mutations.syncUserScore({
           groupId: input.groupId,
@@ -1141,7 +1342,7 @@ export async function getCurrentUserScoreSummary(input: {
         }),
         "Score sync failed."
       ),
-      getCompletedSectionsFromProgress({
+      getSectionProgressPointsFromProgress({
         client,
         groupId: input.groupId,
         program: input.program,
@@ -1151,7 +1352,7 @@ export async function getCurrentUserScoreSummary(input: {
     ]);
 
     // dayProgress and max values are derived from program structure + local SectionProgress
-    const localScore = calculateScores(input.program, input.activeWeekNumber, completedSections);
+    const localScore = calculateScores(input.program, input.activeWeekNumber, sectionProgressPoints);
 
     return {
       ok: true,
@@ -1372,14 +1573,15 @@ export async function loadJournalExport(input: {
       userId: row.userId,
       weekNumber: row.weekNumber
     }));
-    const completedSections = new Set<CompletedSectionKey>(
-      progressRows
-        .filter((row) => row.completed)
-        .map((row) => sectionKey(row.weekNumber, row.dayNumber, row.sectionId))
+    const sectionProgressPoints = new Map<CompletedSectionKey, number>(
+      progressRows.map((row) => [
+        sectionKey(row.weekNumber, row.dayNumber, row.sectionId),
+        row.pointsEarned
+      ])
     );
     const weeklyTotals = Object.fromEntries(
       input.program.weeks.map((week) => {
-        const score = calculateScores(input.program, week.weekNumber, completedSections);
+        const score = calculateScores(input.program, week.weekNumber, sectionProgressPoints);
         return [
           week.weekNumber,
           {
@@ -1389,7 +1591,7 @@ export async function loadJournalExport(input: {
         ];
       })
     );
-    const cumulative = calculateScores(input.program, input.program.weeks[0]?.weekNumber ?? 1, completedSections);
+    const cumulative = calculateScores(input.program, input.program.weeks[0]?.weekNumber ?? 1, sectionProgressPoints);
 
     return {
       ok: true,
@@ -1497,7 +1699,7 @@ export async function loadJournalDay(input: {
       ok: true,
       data: {
           answers,
-          completedSectionIds: progressRows.filter((row) => row.completed).map((row) => row.sectionId),
+          completedSectionIds: progressRows.filter((row) => row.pointsEarned > 0).map((row) => row.sectionId),
           encryptedAnswerKeys: encryptedAnswers.map(({ answer }) => journalPromptAnswerKey(answer.sectionId, answer.promptId)),
           encryptedAnswerCount: encryptedAnswers.length,
           expectedAnswerIdsByKey: Object.fromEntries(
@@ -1508,6 +1710,7 @@ export async function loadJournalDay(input: {
           ),
           failedAnswerKeys,
           needsReauth,
+          sectionPointsEarned: Object.fromEntries(progressRows.map((row) => [row.sectionId, row.pointsEarned])),
           warning
       }
     };
@@ -1621,21 +1824,46 @@ function buildSectionProgressId(input: {
   return `${input.userId}:${input.groupId}:${input.programId}:${input.weekNumber}:${input.dayNumber}:${input.sectionId}`;
 }
 
-async function getCompletedSectionsFromProgress(input: {
+function getSavedSectionPoints(
+  section: ProgramSection,
+  completedSectionIds: string[],
+  sectionPointsEarned?: Record<string, number>
+): number {
+  const maxPoints = Math.max(0, section.points);
+  const rawPoints = sectionPointsEarned?.[section.id];
+
+  if (rawPoints != null) {
+    return clampPoints(rawPoints, maxPoints);
+  }
+
+  return completedSectionIds.includes(section.id) ? maxPoints : 0;
+}
+
+function clampPoints(value: number, maxPoints: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.min(maxPoints, Math.max(0, Math.round(value)));
+}
+
+async function getSectionProgressPointsFromProgress(input: {
   client: DataClient;
   groupId: string;
   program: Program;
   programId: string;
   userId: string;
-}): Promise<Set<CompletedSectionKey>> {
+}): Promise<Map<CompletedSectionKey, number>> {
   const progressDescriptors = getSectionProgressDescriptors(input);
   const progressResults = await Promise.all(
     progressDescriptors.map((descriptor) => input.client.models.SectionProgress.get({ progressId: descriptor.progressId }))
   );
 
-  return new Set<CompletedSectionKey>(
+  return new Map<CompletedSectionKey, number>(
     progressResults.flatMap((result) =>
-      result.data?.completed ? [sectionKey(result.data.weekNumber, result.data.dayNumber, result.data.sectionId)] : []
+      result.data
+        ? [[sectionKey(result.data.weekNumber, result.data.dayNumber, result.data.sectionId), result.data.pointsEarned]]
+        : []
     )
   );
 }
@@ -1647,6 +1875,7 @@ export async function saveJournalDay(input: {
   weekNumber: number;
   dayNumber: number;
   completedSectionIds: string[];
+  sectionPointsEarned?: Record<string, number>;
   answers: Record<string, { promptId: string; sectionId: string; value: string }>;
   blockedAnswerKeys?: string[];
 }): Promise<ServiceResult<void>> {
@@ -1664,18 +1893,19 @@ export async function saveJournalDay(input: {
         ?.days.find((day) => day.dayNumber === input.dayNumber)
         ?.sections ?? [];
 
-    // Write all section progress in parallel
-    await Promise.all([
-      ...input.completedSectionIds.map((sectionId) => {
-        const section = allSectionIds.find((candidate) => candidate.id === sectionId);
+    // Write all section progress in parallel.
+    await Promise.all(
+      allSectionIds.map((section) => {
+        const pointsEarned = getSavedSectionPoints(section, input.completedSectionIds, input.sectionPointsEarned);
         const progressId = buildSectionProgressId({
           dayNumber: input.dayNumber,
           groupId: input.groupId,
           programId: input.program.program.id,
-          sectionId,
+          sectionId: section.id,
           userId: user.userId,
           weekNumber: input.weekNumber
         });
+
         return upsert(
           () =>
             client.models.SectionProgress.create({
@@ -1685,39 +1915,21 @@ export async function saveJournalDay(input: {
               programId: input.program.program.id,
               weekNumber: input.weekNumber,
               dayNumber: input.dayNumber,
-              sectionId,
-              completed: true,
-              pointsEarned: section?.points ?? 0,
+              sectionId: section.id,
+              completed: pointsEarned > 0,
+              pointsEarned,
               updatedAt: now
             }),
           () =>
             client.models.SectionProgress.update({
               progressId,
-              completed: true,
-              pointsEarned: section?.points ?? 0,
+              completed: pointsEarned > 0,
+              pointsEarned,
               updatedAt: now
             })
         );
-      }),
-      ...allSectionIds
-        .filter((section) => !input.completedSectionIds.includes(section.id))
-        .map((section) => {
-          const progressId = buildSectionProgressId({
-            dayNumber: input.dayNumber,
-            groupId: input.groupId,
-            programId: input.program.program.id,
-            sectionId: section.id,
-            userId: user.userId,
-            weekNumber: input.weekNumber
-          });
-          return client.models.SectionProgress.update({
-            progressId,
-            completed: false,
-            pointsEarned: 0,
-            updatedAt: now
-          });
-        })
-    ]);
+      })
+    );
 
     // Score sync must come after progress writes; Lambda computes score server-side
     await requireSaved(
@@ -1939,26 +2151,12 @@ async function updateOwnMembershipDisplayNames(
   );
 }
 
-async function updateOwnScoreDisplayNames(client: DataClient, userId: string, displayName: string): Promise<void> {
-  const scores = await client.models.UserScore.list({
-    filter: {
-      userId: {
-        eq: userId
-      }
-    }
-  });
-
-  await Promise.all(
-    scores.data.filter((score): score is NonNullable<typeof score> => score != null).map((score) =>
-      requireSaved(
-        client.models.UserScore.update({
-          scoreId: score.scoreId,
-          displayName,
-          updatedAt: new Date().toISOString()
-        }),
-        "A score display name could not be updated."
-      )
-    )
+async function syncOwnScoreDisplayNames(client: DataClient, displayName: string): Promise<void> {
+  await requireSaved(
+    client.mutations.syncDisplayName({
+      displayName
+    }),
+    "Score display names could not be updated."
   );
 }
 

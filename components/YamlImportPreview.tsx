@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { sampleProgram } from "@/data/sampleProgram";
 import { formatPoints } from "@/lib/format";
 import { resolveSelectedGroup, setSelectedGroupId } from "@/lib/groupSelection";
-import { getProgramDayLabel } from "@/lib/programDays";
+import { getProgramDayDisplayName } from "@/lib/programDays";
 import { validateProgramYaml } from "@/lib/programValidation";
 import {
   listAdminGroups,
@@ -182,7 +182,7 @@ export function YamlImportPreview({ embedded = false, groups: providedGroups, on
               </div>
             </fieldset>
           ) : (
-            <p className="muted">Create a Lifepoint Church group before publishing a program.</p>
+            <p className="muted">Create a Deep Roots group before publishing a program.</p>
           )}
           <button className="button" type="button" onClick={validate}>
             Preview program
@@ -309,7 +309,7 @@ function RenderedProgramPreview({
           <select value={day.dayNumber} onChange={(event) => onDayChange(Number(event.target.value))}>
             {week.days.map((candidate) => (
               <option key={candidate.dayNumber} value={candidate.dayNumber}>
-                {getProgramDayLabel(candidate.dayNumber)}: {candidate.title}
+                {getProgramDayDisplayName(candidate)}
               </option>
             ))}
           </select>
@@ -320,7 +320,7 @@ function RenderedProgramPreview({
         <div>
           <p className="eyebrow">Week {week.weekNumber}</p>
           <h2>
-            {getProgramDayLabel(day.dayNumber)}: {day.title}
+            {getProgramDayDisplayName(day)}
           </h2>
           {week.summary ? <p>{week.summary}</p> : null}
         </div>
@@ -336,19 +336,41 @@ function RenderedProgramPreview({
 }
 
 function RenderedSectionPreview({ section }: { section: ProgramSection }) {
+  const partial = isPartialSection(section);
+
   return (
     <section className="render-preview-section">
       <div className="section-layout">
-        <label className="section-check" aria-label={`Preview ${section.title} checkbox`}>
-          <input disabled type="checkbox" />
-        </label>
+        {partial ? (
+          <span className="section-check" aria-hidden="true" />
+        ) : (
+          <label className="section-check" aria-label={`Preview ${section.title} checkbox`}>
+            <input disabled type="checkbox" />
+          </label>
+        )}
 
         <div className="section-content">
           <div>
-            <p className="eyebrow">{formatPoints(section.points)}</p>
+            <p className="eyebrow">{getSectionPointLabel(section)}</p>
             <h3>{section.title}</h3>
           </div>
           {section.body ? <p>{section.body}</p> : null}
+          {partial ? (
+            <div className="field preview-partial-control">
+              <span>{getCompletionControlLabel(section)}</span>
+              <div className="completion-picker preview" role="group" aria-label={getCompletionControlLabel(section)}>
+                {getCompletionOptions(section).map((completionCount) => (
+                  <button className={completionCount === 0 ? "active" : ""} disabled key={completionCount} type="button">
+                    {completionCount}
+                  </button>
+                ))}
+              </div>
+              <small>
+                Preview: 0/{section.points} points. Users can enter 0-{section.maxCompletions}{" "}
+                {pluralizeUnit(section.completionUnit ?? "completion", section.maxCompletions ?? 0)}.
+              </small>
+            </div>
+          ) : null}
           {section.scripture?.map((scripture) => (
             <blockquote className="scripture" key={scripture.reference}>
               <strong>{scripture.reference}</strong>
@@ -358,11 +380,43 @@ function RenderedSectionPreview({ section }: { section: ProgramSection }) {
           {section.prompts?.map((prompt) => (
             <label className="field" key={prompt.id}>
               <span>{prompt.label}</span>
-              <textarea className="journal-textarea" disabled placeholder="Optional reflection" />
+              <textarea className="journal-textarea" disabled placeholder="Write your response" />
             </label>
           ))}
         </div>
       </div>
     </section>
   );
+}
+
+function isPartialSection(section: ProgramSection): boolean {
+  return Boolean(section.maxCompletions && section.maxCompletions > 1 && section.pointsPerCompletion);
+}
+
+function getSectionPointLabel(section: ProgramSection): string {
+  if (!isPartialSection(section)) {
+    return formatPoints(section.points);
+  }
+
+  const unit = section.completionUnit ?? "completion";
+  return `${formatPoints(section.pointsPerCompletion ?? 1)} per ${unit}, ${section.maxCompletions} ${pluralizeUnit(
+    unit,
+    section.maxCompletions ?? 0
+  )} max`;
+}
+
+function getCompletionOptions(section: ProgramSection): number[] {
+  return Array.from({ length: (section.maxCompletions ?? 0) + 1 }, (_, index) => index);
+}
+
+function getCompletionControlLabel(section: ProgramSection): string {
+  return `${capitalize(pluralizeUnit(section.completionUnit ?? "completion", section.maxCompletions ?? 0))} completed`;
+}
+
+function pluralizeUnit(unit: string, count: number): string {
+  return count === 1 ? unit : `${unit}s`;
+}
+
+function capitalize(value: string): string {
+  return value.length > 0 ? `${value[0].toUpperCase()}${value.slice(1)}` : value;
 }

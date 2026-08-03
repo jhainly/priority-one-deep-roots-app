@@ -1,6 +1,7 @@
 import type { Program } from "@/types/program";
 import type { SectionProgress } from "@/types/domain";
 import { journalPromptStorageIds, journalSectionReflectionKey, resolveJournalAnswer } from "@/lib/journalAnswerKeys";
+import { getProgramDayDisplayName } from "@/lib/programDays";
 
 export type WeeklyExportTotal = {
   maxScore: number;
@@ -97,14 +98,14 @@ function layoutJournalExport(input: JournalExportInput): PdfPage[] {
       };
 
       addLine(`Week ${week.weekNumber}: ${week.title}`, { bold: true, fontSize: WEEK_FONT_SIZE, gapAfter: 14 });
-      addLine(`Day ${day.dayNumber}: ${day.title}`, { bold: true, fontSize: DAY_FONT_SIZE, gapAfter: 14 });
+      addLine(getProgramDayDisplayName(day), { bold: true, fontSize: DAY_FONT_SIZE, gapAfter: 14 });
       addLine("");
 
       for (const section of day.sections) {
         const key = `${week.weekNumber}:${day.dayNumber}:${section.id}`;
-        const completed = completedSections.has(key);
         const progress = progressBySection.get(key);
-        const earned = completed ? progress?.pointsEarned ?? section.points : 0;
+        const earned = Math.min(section.points, Math.max(0, progress?.pointsEarned ?? 0));
+        const completed = completedSections.has(key) || earned > 0;
 
         addLine(`${completed ? "[x]" : "[ ]"} ${section.title} (${earned}/${section.points} points)`, {
           bold: true,

@@ -1,594 +1,214 @@
 import type { CompletedSectionKey } from "@/lib/scoring";
-import type { Program, ProgramDay, ProgramSection } from "@/types/program";
+import type { Program, ProgramDay, ProgramPrompt, ProgramSection } from "@/types/program";
 
-type ScriptureSeed = {
-  reference: string;
-  text: string;
+type ReflectionDay = {
+  dayNumber: number;
+  growthQuestion: string;
+  label: string;
+  reading: string;
+  spiritualQuestions: string[];
 };
 
-type DaySeed = {
-  title: string;
-  focus: string;
-  scripture: ScriptureSeed;
-};
+const reflectionDays: ReflectionDay[] = [
+  {
+    dayNumber: 2,
+    label: "Monday",
+    reading: "Matthew 17:1-13",
+    growthQuestion: "Why do you live where you live? What went into that decision?",
+    spiritualQuestions: [
+      "Jesus took His inner circle (Peter, James, and John) up a high mountain. He revealed His glory and identity to them in a deeper way than He did to any of His other followers at that time. Who are two or three men God might be encouraging you to invite into your life in a deeper way than others are? What would it look like to give them access to you and your life in a way others don't have? What would it look like for you to prioritize them in your life by making yourself available to them in ways that you aren't available to others?",
+      "The disciples see Jesus' glory. Jesus' glory is something of the majesty and splendor of God being made visible through Him. Jesus is the glory of God in the flesh who makes God known (John 1:14-18). He is the image of the invisible God (Colossians 1:15). He is the radiance of God's glory (Hebrews 1:1-4). As the light and heat of the sun allow us to feel and experience something of its splendor, power, and glory, Jesus has given us the ability to experience the incomprehensible glory of God in a way that is accessible to us without destroying us. Where is Jesus trying to lift your eyes from the ordinary to see the extraordinary reality of who He truly is? In what specific ways should every aspect of your life be affected and transformed by the glory of Jesus shining into it? Your thoughts? Your words? Your actions? Your relationships? Your plans? Your house? Your car? Your entertainment? Your work? Your finances?",
+      "When Jesus gives us access to who He is in deeper and fuller ways, our lives are transformed by His Holy Spirit (2 Corinthians 3:18). When we give other brothers access to who we are in deeper and fuller ways, our lives become sharpened (Proverbs 27:17), their lives become sharpened, and our relationship grows. In what specific ways could God transform your life and the lives of others more deeply as you develop authentic relationships with other men?",
+      "Jesus revealed Himself to Peter in a special way. He also gave Peter a special glimpse of the man Jesus would help Peter become, in spite of his issues and failures (Matthew 16:18-19; Matthew 26:69-75; John 21:15-25). Who is a man in your life that needs to hear about who God can make them in spite of their current insecurities, inadequacies, or failures?",
+      "Based on today's reading, what is one thing you can thank or praise God for? One thing you can ask forgiveness for? One thing you can ask God to do for you or others?"
+    ]
+  },
+  {
+    dayNumber: 3,
+    label: "Tuesday",
+    reading: "Matthew 17:14-27",
+    growthQuestion:
+      "Have you put down roots where you live? Why is this important? What are signs demonstrating that you put down roots?",
+    spiritualQuestions: [
+      "The disciples could not heal the boy, and Jesus exposes their unbelief. He reveals that a life of following after Jesus requires an attitude of dependent trust in Him. It is not necessarily the size of one's faith that is important. A mustard seed was the smallest of all the garden seeds in Jesus' time. The essential element of our faith is that it is placed in the right object, God Himself. Dependent trust in Jesus equivalent to the size of a mustard seed can move a mountain. That is not because the faith is great, but because the person is trusting in the Great One who holds all authority, power, and dominion over all things. What seemingly impossible difficulties are present in your closest relationships? What would it look like to keep planting mustard seeds of faith in these areas day after day? What would it look like to keep trusting that God can do far more abundantly beyond all that you can ask or imagine according to His power at work within you (Ephesians 3:14-21)? Take a minute to imagine what things could be like in that area of difficulty if God showed up in a powerful way. What could happen in your heart and life? What could happen in their heart and life? Trust that God can do far more abundantly beyond all that you can ask or imagine. Also, trust that God will do it in His timing.",
+      "The father of the afflicted son came to Jesus for help. God has sovereignly chosen to use His people empowered by His Spirit as one of the primary means of helping hurting people in the world. Who is someone in your life that is hurting, struggling, or going through something difficult? What would it look like for you to commit to praying for them? What is one practical way you can come alongside them to help share their burden?",
+      "Jesus rebuked the demon and restored the boy to full health. Where do you need Jesus' restoring power in your own life or relationships? Where do those around you need the restoring power of Jesus?",
+      "Based on today's reading, what is one thing you can thank or praise God for? One thing you can ask forgiveness for? One thing you can ask God to do for you or others?"
+    ]
+  },
+  {
+    dayNumber: 4,
+    label: "Wednesday",
+    reading: "Matthew 18:1-14",
+    growthQuestion:
+      "Earley states, \"We can't properly care for our families unless we're also caring for our friendships.\" Do you agree? Why or why not?",
+    spiritualQuestions: [
+      "Jesus warned against causing others to stumble. How does this sharpen your awareness of how your actions influence your brothers in Christ?",
+      "In what ways might your attitudes, words, or actions be unintentionally damaging someone's commitment to Jesus or His mission?",
+      "What practical steps can you take to develop a protective presence in your friendships that builds your brothers up in godliness?",
+      "Jesus cares about and pursues the wandering sheep. Who in your life or church is drifting right now and needs your pursuit?",
+      "Based on today's reading, what is one thing you can thank or praise God for? One thing you can ask forgiveness for? One thing you can ask God to do for you or others?"
+    ]
+  },
+  {
+    dayNumber: 5,
+    label: "Thursday",
+    reading: "Matthew 18:15-20",
+    growthQuestion: "Which of the \"Habits of Proximity\" would you like to develop? Why?",
+    spiritualQuestions: [
+      "Jesus instructed His followers to go directly to a brother who had sinned against them. In what ways do you avoid honest, humble truth-telling in your relationships? What fears cause you to avoid it? Where is God calling you to courageously initiate a private, honest conversation instead of avoiding conflict or slandering a brother?",
+      "Jesus emphasizes winning your brother, not winning an argument. How might your tone, posture, or expectations need to change so restoration, not being right, becomes your goal? See Galatians 6:1-3.",
+      "Jesus provided a relational process for addressing someone who sins against us: private first, then with witnesses, then with the church. Is there a situation you have addressed alone that now needs to be addressed with the assistance of another brother? How can you determine if a third party needs to be involved? What would need to be true about the personality, character, and beliefs of that third party to make them a wise addition who can speak words of truth in love?",
+      "Jesus revealed that there is a time for someone to be cut off from deep friendship. This may be the best choice if the person continues to sin against another, refuses to acknowledge their sinfulness, and refuses to seek forgiveness. Paul gives an example of this in 1 Corinthians 5:1-12. How would you determine whether the best approach is to remove someone from your life? Do you have anyone in your life that seems to fit this category? If so, invite some trusted brothers and church leaders into the process to help you pray for the situation and determine what is best for this relationship. Remember, the ultimate goal is always to win them over and restore relationship between you, them, and Jesus. Additionally, this will rarely apply to separating yourself from your wife; though it is possible given certain situations that are supported by the Bible. Seek godly counsel if you are having deep struggles with your wife that are causing you to consider separating yourself from her.",
+      "Based on today's reading, what is one thing you can thank or praise God for? One thing you can ask forgiveness for? One thing you can ask God to do for you or others?"
+    ]
+  },
+  {
+    dayNumber: 6,
+    label: "Friday",
+    reading: "Matthew 18:21-35",
+    growthQuestion: "What is your biggest takeaway from this week's reading? What are you going to do with it?",
+    spiritualQuestions: [
+      "Forgiveness is costly. Jesus was willing to give His life on the cross so that we could receive God's forgiveness. In light of His willingness to forgive us even though we don't deserve it, we are called to forgive those who sin against us. Jesus hates the sin that was done to you more than you do. He understands even more deeply than you do the depth and evil of it. But He also loves the person who sinned against you and desires them to be saved from their sin and transformed into someone who brings goodness to others' lives, rather than destruction. What wound, resentment, or bitterness is Jesus inviting you to bring into the light so He can heal it?",
+      "How does remembering God's forgiveness toward you soften your heart toward those who have sinned against you?",
+      "Forgiving someone who has sinned against you is not admitting that what they did was okay. It is not giving them immediate access to you in the ways they've had in the past. And it is not necessarily giving them full trust again. Forgiving someone is choosing to cancel a debt that they owe you because of the pain they have caused you by sinning against you. They don't deserve your forgiveness, but you make the choice to absorb the cost of their sin against you because Jesus has absorbed all of the debt you owe God because of your sin against Him and others. Receiving forgiveness from God frees you to forgive others who have sinned against you. Are you withholding forgiveness from someone who has sinned against you in the past? How is that unforgiveness hardening your heart toward that person and others? How can your TEAM come alongside you and help you offer forgiveness to this person? What is the wisest way to approach forgiving this person? Sometimes the forgiveness can be spoken privately as an act of giving the situation over to God. Sometimes it needs to be done directly with the person who has offended you. Seek wise counsel from other brothers to determine what is best.",
+      "Watch this interview I did on forgiveness with counselor Jess Meade for a deeper understanding of what forgiveness is and is not from a biblical perspective. Go to priorityone.org/dr8-videos.",
+      "Based on today's reading, what is one thing you can thank or praise God for? One thing you can ask forgiveness for? One thing you can ask God to do for you or others?"
+    ]
+  }
+];
 
-type WeekSeed = {
-  title: string;
-  summary: string;
-  days: DaySeed[];
-};
-
-const weekSeeds: WeekSeed[] = [
+const missionScorecardSections: ProgramSection[] = [
   {
-    title: "Foundation",
-    summary: "Identity, honesty, and the first daily commitments.",
-    days: [
-      {
-        title: "Begin Honestly",
-        focus: "Bring what is true into the light before you try to fix it.",
-        scripture: {
-          reference: "Psalm 139:23-24",
-          text: "Search me, God, and know my heart; test me and know my anxious thoughts."
-        }
-      },
-      {
-        title: "Tell the Truth",
-        focus: "Confession is agreement with God about reality.",
-        scripture: {
-          reference: "1 John 1:9",
-          text: "If we confess our sins, he is faithful and just and will forgive us our sins."
-        }
-      },
-      {
-        title: "Receive Mercy",
-        focus: "Mercy is not earned by better language or stronger resolve.",
-        scripture: {
-          reference: "Hebrews 4:16",
-          text: "Let us then approach God's throne of grace with confidence."
-        }
-      },
-      {
-        title: "Name the Battle",
-        focus: "Specific words make vague struggles easier to face.",
-        scripture: {
-          reference: "Ephesians 6:13",
-          text: "Put on the full armor of God, so that when the day of evil comes, you may be able to stand."
-        }
-      },
-      {
-        title: "One Faithful Step",
-        focus: "Choose an act of obedience small enough to complete today.",
-        scripture: {
-          reference: "Luke 16:10",
-          text: "Whoever can be trusted with very little can also be trusted with much."
-        }
-      },
-      {
-        title: "Practice Rest",
-        focus: "Rest is trust expressed through limits.",
-        scripture: {
-          reference: "Matthew 11:28",
-          text: "Come to me, all you who are weary and burdened, and I will give you rest."
-        }
-      },
-      {
-        title: "Bring It to the Group",
-        focus: "Prepare to speak plainly and listen well when the group meets.",
-        scripture: {
-          reference: "James 5:16",
-          text: "Confess your sins to each other and pray for each other so that you may be healed."
-        }
-      }
-    ]
+    id: "weekly-check-in",
+    title: "Weekly Check-In",
+    body: "Review your Week Five mission progress in the app by Friday at midnight.",
+    points: 1
   },
   {
-    title: "Practice",
-    summary: "Repeatable rhythms for repentance, prayer, and brotherhood.",
-    days: [
-      {
-        title: "Daily Bread",
-        focus: "Ask for enough grace for today.",
-        scripture: {
-          reference: "Matthew 6:11",
-          text: "Give us today our daily bread."
-        }
-      },
-      {
-        title: "Prayer Without Performance",
-        focus: "Prayer is communion before it is output.",
-        scripture: {
-          reference: "Matthew 6:6",
-          text: "When you pray, go into your room, close the door and pray to your Father."
-        }
-      },
-      {
-        title: "Hidden Habits",
-        focus: "Private rhythms shape public faithfulness.",
-        scripture: {
-          reference: "Galatians 6:8",
-          text: "Whoever sows to please the Spirit, from the Spirit will reap eternal life."
-        }
-      },
-      {
-        title: "Ask for Help",
-        focus: "Brotherhood grows when need is spoken plainly.",
-        scripture: {
-          reference: "Galatians 6:2",
-          text: "Carry each other's burdens, and in this way you will fulfill the law of Christ."
-        }
-      },
-      {
-        title: "Review the Week",
-        focus: "Slow review helps obedience become visible.",
-        scripture: {
-          reference: "Psalm 90:12",
-          text: "Teach us to number our days, that we may gain a heart of wisdom."
-        }
-      },
-      {
-        title: "Practice Gratitude",
-        focus: "Gratitude names gifts before scarcity takes the lead.",
-        scripture: {
-          reference: "1 Thessalonians 5:18",
-          text: "Give thanks in all circumstances; for this is God's will for you in Christ Jesus."
-        }
-      },
-      {
-        title: "Prepare to Share",
-        focus: "Brief preparation helps group time become honest and useful.",
-        scripture: {
-          reference: "Proverbs 27:17",
-          text: "As iron sharpens iron, so one person sharpens another."
-        }
-      }
-    ]
+    id: "chapter-reading",
+    title: "Chapter Reading",
+    body: "Chapter 6.",
+    points: 3
   },
   {
-    title: "Brotherhood",
-    summary: "Building trust, accountability, and shared courage.",
-    days: [
-      {
-        title: "Known by Name",
-        focus: "You cannot be strengthened by brothers who do not know you.",
-        scripture: {
-          reference: "John 10:14",
-          text: "I am the good shepherd; I know my sheep and my sheep know me."
-        }
-      },
-      {
-        title: "Carry Weight",
-        focus: "Bearing burdens requires attention before advice.",
-        scripture: {
-          reference: "Romans 12:15",
-          text: "Rejoice with those who rejoice; mourn with those who mourn."
-        }
-      },
-      {
-        title: "Speak Clearly",
-        focus: "Clear words are a form of love.",
-        scripture: {
-          reference: "Ephesians 4:15",
-          text: "Speaking the truth in love, we will grow to become in every respect the mature body."
-        }
-      },
-      {
-        title: "Receive Correction",
-        focus: "Correction can be a gift when it is anchored in truth.",
-        scripture: {
-          reference: "Proverbs 12:1",
-          text: "Whoever loves discipline loves knowledge, but whoever hates correction is stupid."
-        }
-      },
-      {
-        title: "Commit Together",
-        focus: "Shared commitments help good intentions become action.",
-        scripture: {
-          reference: "Hebrews 10:24",
-          text: "Consider how we may spur one another on toward love and good deeds."
-        }
-      },
-      {
-        title: "Encourage a Brother",
-        focus: "Encouragement becomes stronger when it is specific.",
-        scripture: {
-          reference: "1 Thessalonians 5:11",
-          text: "Encourage one another and build each other up."
-        }
-      },
-      {
-        title: "Show Up Honestly",
-        focus: "Presence matters most when it is truthful.",
-        scripture: {
-          reference: "Hebrews 3:13",
-          text: "Encourage one another daily, as long as it is called Today."
-        }
-      }
-    ]
+    id: "memorization",
+    title: "Memorization",
+    body: "Matthew 6:14-15 - If you forgive those who sin against you, your heavenly Father will forgive you. But if you refuse to forgive others, your Father will not forgive your sins. (NLT)",
+    points: 2
   },
   {
-    title: "Discipline",
-    summary: "Training attention, desire, and daily obedience.",
-    days: [
-      {
-        title: "Order the Morning",
-        focus: "First attention often sets the direction of the day.",
-        scripture: {
-          reference: "Mark 1:35",
-          text: "Very early in the morning, while it was still dark, Jesus got up, left the house and went off to a solitary place."
-        }
-      },
-      {
-        title: "Guard the Door",
-        focus: "Not every desire deserves entry.",
-        scripture: {
-          reference: "Proverbs 4:23",
-          text: "Above all else, guard your heart, for everything you do flows from it."
-        }
-      },
-      {
-        title: "Do the Small Thing",
-        focus: "Small obedience is still obedience.",
-        scripture: {
-          reference: "Colossians 3:23",
-          text: "Whatever you do, work at it with all your heart, as working for the Lord."
-        }
-      },
-      {
-        title: "Fast from Noise",
-        focus: "Silence can reveal what constant noise keeps covered.",
-        scripture: {
-          reference: "Psalm 46:10",
-          text: "Be still, and know that I am God."
-        }
-      },
-      {
-        title: "End the Day Clean",
-        focus: "A simple review keeps drift from becoming hidden.",
-        scripture: {
-          reference: "Ephesians 4:26",
-          text: "Do not let the sun go down while you are still angry."
-        }
-      },
-      {
-        title: "Renew the Pattern",
-        focus: "Discipline grows through returning, not pretending you never drift.",
-        scripture: {
-          reference: "Galatians 6:9",
-          text: "Let us not become weary in doing good, for at the proper time we will reap a harvest."
-        }
-      },
-      {
-        title: "Report Without Spin",
-        focus: "Accountability is clearest when progress and failure are both named.",
-        scripture: {
-          reference: "Proverbs 28:13",
-          text: "Whoever conceals their sins does not prosper, but the one who confesses and renounces them finds mercy."
-        }
-      }
-    ]
+    id: "aerobic-exercise",
+    title: "Aerobic Exercise",
+    body: "20 minutes, 3 days this week.",
+    completionUnit: "day",
+    maxCompletions: 3,
+    points: 3,
+    pointsPerCompletion: 1
   },
   {
-    title: "Service",
-    summary: "Moving faith outward through sacrifice and responsibility.",
-    days: [
-      {
-        title: "Notice Need",
-        focus: "Service begins with seeing people clearly.",
-        scripture: {
-          reference: "Philippians 2:4",
-          text: "Not looking to your own interests but each of you to the interests of the others."
-        }
-      },
-      {
-        title: "Use Strength Well",
-        focus: "Strength is stewardship, not self-display.",
-        scripture: {
-          reference: "1 Peter 4:10",
-          text: "Use whatever gift you have received to serve others."
-        }
-      },
-      {
-        title: "Practice Generosity",
-        focus: "Generosity trains the heart away from self-protection.",
-        scripture: {
-          reference: "2 Corinthians 9:7",
-          text: "God loves a cheerful giver."
-        }
-      },
-      {
-        title: "Repair What Is Yours",
-        focus: "Responsibility includes repair where you have caused strain.",
-        scripture: {
-          reference: "Matthew 5:24",
-          text: "First go and be reconciled to them; then come and offer your gift."
-        }
-      },
-      {
-        title: "Serve at Home",
-        focus: "The closest people should not receive the least patience.",
-        scripture: {
-          reference: "Joshua 24:15",
-          text: "As for me and my household, we will serve the Lord."
-        }
-      },
-      {
-        title: "Serve Without Credit",
-        focus: "Hidden service trains the heart away from applause.",
-        scripture: {
-          reference: "Matthew 6:3",
-          text: "When you give to the needy, do not let your left hand know what your right hand is doing."
-        }
-      },
-      {
-        title: "Bring a Need",
-        focus: "Service and need belong together in honest brotherhood.",
-        scripture: {
-          reference: "Acts 20:35",
-          text: "It is more blessed to give than to receive."
-        }
-      }
-    ]
+    id: "strength-training",
+    title: "Strength Training",
+    body: "20 minutes, 3 days this week. Your training must include 3 minutes of core exercises. (Sit-ups, planks, lower back exercises, etc.)",
+    completionUnit: "day",
+    maxCompletions: 3,
+    points: 3,
+    pointsPerCompletion: 1
   },
   {
-    title: "Perseverance",
-    summary: "Continuing faithfully when progress feels slow.",
-    days: [
-      {
-        title: "Stay in the Fight",
-        focus: "Weariness is real, but it does not have to lead.",
-        scripture: {
-          reference: "2 Timothy 4:7",
-          text: "I have fought the good fight, I have finished the race, I have kept the faith."
-        }
-      },
-      {
-        title: "Remember Grace",
-        focus: "Memory strengthens obedience when emotion is thin.",
-        scripture: {
-          reference: "Lamentations 3:22-23",
-          text: "Because of the Lord's great love we are not consumed, for his compassions never fail."
-        }
-      },
-      {
-        title: "Tell the Group",
-        focus: "Perseverance is strengthened by honest community.",
-        scripture: {
-          reference: "Ecclesiastes 4:10",
-          text: "If either of them falls down, one can help the other up."
-        }
-      },
-      {
-        title: "Prepare for Pressure",
-        focus: "Pressure reveals what needs practice before the moment arrives.",
-        scripture: {
-          reference: "James 1:12",
-          text: "Blessed is the one who perseveres under trial."
-        }
-      },
-      {
-        title: "Finish Faithfully",
-        focus: "Finishing well means returning to what matters.",
-        scripture: {
-          reference: "Hebrews 12:1",
-          text: "Let us run with perseverance the race marked out for us."
-        }
-      },
-      {
-        title: "Bless the Next Man",
-        focus: "Perseverance includes strengthening someone else for the road ahead.",
-        scripture: {
-          reference: "2 Corinthians 1:4",
-          text: "We can comfort those in any trouble with the comfort we ourselves receive from God."
-        }
-      },
-      {
-        title: "Keep Walking",
-        focus: "Tuesday is not the finish line; it is a checkpoint for continued obedience.",
-        scripture: {
-          reference: "Micah 6:8",
-          text: "Act justly and to love mercy and to walk humbly with your God."
-        }
-      }
-    ]
+    id: "physical-action",
+    title: "Physical Action",
+    body: "Avoid all screens (phone, TV, computer, etc.) for the first 60 minutes after you wake up, Monday through Thursday. If you journal or do your devotions on your computer/phone, write down your daily devos for the week ahead of time and use a notebook and actual Bible. Or do your digital devos at a different time of the day.",
+    completionUnit: "day",
+    maxCompletions: 4,
+    points: 8,
+    pointsPerCompletion: 2
+  },
+  {
+    id: "meet-with-team",
+    title: "Relational",
+    body: "Meet with your TEAM.",
+    points: 5
+  },
+  {
+    id: "relational-action",
+    title: "Relational Action",
+    body: "Celebrate a friend's success this week - publicly or privately. Make their joy your joy (text, note, small gift, or act of kindness).",
+    points: 3
+  },
+  {
+    id: "friday-zoom",
+    title: "Friday Zoom Meeting",
+    body: "Join the 10-minute Friday Zoom meeting at 7:00 AM EST. Find the link in the weekly mission email. If you miss the meeting, a recording will be included in the Friday email.",
+    points: 2
   }
 ];
 
 export const sampleProgram: Program = {
   program: {
-    id: "lifepoint-mens-group-v1",
-    title: "Lifepoint Men's Group",
+    id: "priority-one-deep-roots-week-5",
+    title: "Deep Roots",
     version: "1.0.0",
-    description: "A Lifepoint Church program for daily attention to mind, spirit, body, and honest reflection."
+    description: "Week Five Mission from the Deep Roots weekly missions format."
   },
-  weeks: weekSeeds.map((week, weekIndex) => ({
-    weekNumber: weekIndex + 1,
-    title: week.title,
-    summary: week.summary,
-    days: week.days.map((day, dayIndex) => makeDay(weekIndex + 1, dayIndex + 1, day))
-  }))
+  weeks: [
+    {
+      weekNumber: 5,
+      title: "Week Five Mission",
+      summary: "Complete by Friday at midnight.",
+      days: [makeMissionScorecardDay(), ...reflectionDays.map(makeReflectionDay)]
+    }
+  ]
 };
 
 export const sampleCompletedSections = new Set<CompletedSectionKey>([
-  "1:1:mind",
-  "1:1:spirit",
-  "1:1:body",
-  "1:2:mind",
-  "2:1:spirit"
+  "5:1:weekly-check-in",
+  "5:2:growth-challenge",
+  "5:2:spiritual-action"
 ]);
 
 export const leaderboardRows = [
-  { displayName: "James", score: 24 },
-  { displayName: "Marcus", score: 31 },
-  { displayName: "Ethan", score: 19 }
+  { displayName: "James", score: 28 },
+  { displayName: "Marcus", score: 34 },
+  { displayName: "Ethan", score: 23 }
 ];
 
-function makeDay(weekNumber: number, dayNumber: number, seed: DaySeed): ProgramDay {
+function makeMissionScorecardDay(): ProgramDay {
   return {
-    dayNumber,
-    title: seed.title,
+    dayNumber: 1,
+    label: "Weekly Missions",
+    title: "Weekly Missions",
+    sections: missionScorecardSections
+  };
+}
+
+function makeReflectionDay(day: ReflectionDay): ProgramDay {
+  return {
+    dayNumber: day.dayNumber,
+    label: day.label,
+    title: "Reading and Reflection",
     sections: [
-      makeMindSection(weekNumber, dayNumber, seed),
-      makeSpiritSection(weekNumber, dayNumber, seed),
-      makeBodySection(weekNumber, dayNumber),
-      makeEndOfDaySection(weekNumber, dayNumber),
-      ...makeBonusSections(dayNumber, seed)
-    ]
-  };
-}
-
-function makeMindSection(weekNumber: number, dayNumber: number, seed: DaySeed): ProgramSection {
-  return {
-    id: "mind",
-    title: "Start of Day - Mind",
-    body: seed.focus,
-    points: 1,
-    prompts: [
       {
-        id: `w${weekNumber}d${dayNumber}-mind-1`,
-        label: "What is occupying the most space in your mind this morning?",
-        optional: true
+        id: "growth-challenge",
+        title: "Growth & Challenge",
+        body: "Write your answer to the daily reflection question.",
+        points: 1,
+        prompts: [{ id: `${day.label.toLowerCase()}-growth`, label: day.growthQuestion }]
       },
       {
-        id: `w${weekNumber}d${dayNumber}-mind-2`,
-        label: "What thought needs to be submitted to truth today?",
-        optional: true
-      },
-      {
-        id: `w${weekNumber}d${dayNumber}-mind-3`,
-        label: "What is one clear priority for the day?",
-        optional: true
+        id: "spiritual-action",
+        title: "Spiritual Action: Reading and Reflection",
+        body: `Read ${day.reading}.`,
+        points: 1,
+        prompts: makeQuestionPrompts(day)
       }
     ]
   };
 }
 
-function makeSpiritSection(weekNumber: number, dayNumber: number, seed: DaySeed): ProgramSection {
-  return {
-    id: "spirit",
-    title: "Spirit",
-    body: "Read the passage slowly, then apply it to the day in front of you.",
-    points: 1,
-    scripture: [seed.scripture],
-    prompts: [
-      {
-        id: `w${weekNumber}d${dayNumber}-spirit-1`,
-        label: "What does this passage reveal about God, you, or obedience?",
-        optional: true
-      },
-      {
-        id: `w${weekNumber}d${dayNumber}-spirit-2`,
-        label: "How will you apply this passage before the day ends?",
-        optional: true
-      }
-    ]
-  };
-}
-
-function makeBodySection(weekNumber: number, dayNumber: number): ProgramSection {
-  const workout = getWorkout(dayNumber);
-
-  return {
-    id: "body",
-    title: "Body",
-    body: `Workout: ${workout}. Complete it with steady form and no hurry.`,
-    points: 1,
-    prompts: [
-      {
-        id: `w${weekNumber}d${dayNumber}-body-1`,
-        label: "What time will you do the workout?",
-        optional: true
-      }
-    ]
-  };
-}
-
-function makeEndOfDaySection(weekNumber: number, dayNumber: number): ProgramSection {
-  return {
-    id: "end-of-day-reflection",
-    title: "End of Day - Reflection",
-    body: "Close the day by reviewing what actually happened without spin.",
-    points: 1,
-    prompts: [
-      {
-        id: `w${weekNumber}d${dayNumber}-end-1`,
-        label: "Did you do what you planned to do today?",
-        optional: true
-      },
-      {
-        id: `w${weekNumber}d${dayNumber}-end-2`,
-        label: "Where did you obey, drift, or avoid action?",
-        optional: true
-      },
-      {
-        id: `w${weekNumber}d${dayNumber}-end-3`,
-        label: "What do you need to confess, repair, or carry into tomorrow?",
-        optional: true
-      }
-    ]
-  };
-}
-
-function makeBonusSections(dayNumber: number, seed: DaySeed): ProgramSection[] {
-  return [
-    {
-      id: "bonus-read-verse",
-      title: "Bonus: Read This Verse",
-      body: `Read ${seed.scripture.reference} once more, slowly and out loud.`,
-      points: 1
-    },
-    {
-      id: "bonus-bad-habit",
-      title: "Bonus: Resist a Bad Habit",
-      body: getBadHabitChallenge(dayNumber),
-      points: 2
-    },
-    {
-      id: "bonus-workout",
-      title: "Bonus: Extra Workout",
-      body: getBonusWorkout(dayNumber),
-      points: 3
-    }
-  ];
-}
-
-function getWorkout(dayNumber: number): string {
-  const workouts = [
-    "20 push ups, 20 sit ups, and 20 squats",
-    "25 jumping jacks, 20 push ups, and a 60-second plank",
-    "20 lunges, 20 sit ups, and 20 squats",
-    "30-second wall sit, 20 push ups, and 20 mountain climbers",
-    "20 squats, 20 sit ups, and a 10-minute walk",
-    "15 burpees, 20 lunges, and a 60-second plank",
-    "20 push ups, 20 sit ups, and 20 squats"
-  ];
-
-  return workouts[(dayNumber - 1) % workouts.length];
-}
-
-function getBadHabitChallenge(dayNumber: number): string {
-  const challenges = [
-    "Do not scroll social media before noon.",
-    "Do not complain about work, family, or responsibilities today.",
-    "Do not eat or drink out of boredom today.",
-    "Do not look at any private screen you would hide from the group.",
-    "Do not speak harshly when correction or patience is required.",
-    "Do not procrastinate the one task you already know matters.",
-    "Do not isolate when you need to be honest with someone."
-  ];
-
-  return challenges[(dayNumber - 1) % challenges.length];
-}
-
-function getBonusWorkout(dayNumber: number): string {
-  const workouts = [
-    "Do 30 additional push ups.",
-    "Do 40 additional bodyweight squats.",
-    "Hold a plank for 2 total minutes.",
-    "Take a brisk 20-minute walk.",
-    "Do 30 lunges and 30 sit ups.",
-    "Do 50 jumping jacks and 25 push ups.",
-    "Stretch for 10 minutes and do 25 squats."
-  ];
-
-  return workouts[(dayNumber - 1) % workouts.length];
+function makeQuestionPrompts(day: ReflectionDay): ProgramPrompt[] {
+  return day.spiritualQuestions.map((question, index) => ({
+    id: `${day.label.toLowerCase()}-q${index + 1}`,
+    label: `Q${index + 1}. ${question}`
+  }));
 }

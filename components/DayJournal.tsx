@@ -15,7 +15,7 @@ import {
 } from "@/lib/journalAnswerKeys";
 import { formatPoints } from "@/lib/format";
 import { resolveSelectedGroup, setSelectedGroupId } from "@/lib/groupSelection";
-import { getProgramDayLabel } from "@/lib/programDays";
+import { getProgramDayDisplayName } from "@/lib/programDays";
 import {
   listCurrentUserGroups,
   loadActiveProgramForGroup,
@@ -24,7 +24,7 @@ import {
   type JournalDayState,
   type UserGroupSummary
 } from "@/lib/services/dataClient";
-import type { Program, ProgramDay } from "@/types/program";
+import type { Program, ProgramDay, ProgramSection } from "@/types/program";
 
 type VerificationFailure = {
   answerId?: string;
@@ -33,8 +33,9 @@ type VerificationFailure = {
   reason: "delete-not-applied" | "decrypt-failed" | "missing-record" | "value-mismatch";
 };
 type ProgressVerificationFailure = {
-  expectedCompleted: boolean;
+  expectedPointsEarned: number;
   progressId?: string;
+  actualPointsEarned: number;
   sectionId: string;
 };
 
@@ -47,6 +48,7 @@ export function DayJournal({
 }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [completedSectionIds, setCompletedSectionIds] = useState<string[]>([]);
+  const [sectionPointsEarned, setSectionPointsEarned] = useState<Record<string, number>>({});
   const [activeGroup, setActiveGroup] = useState<UserGroupSummary | null>(null);
   const [program, setProgram] = useState<Program | null>(null);
   const [day, setDay] = useState<ProgramDay | null>(null);
@@ -65,6 +67,7 @@ export function DayJournal({
   const hasUserChangedRef = useRef(false);
   const answersRef = useRef<Record<string, string>>({});
   const completedSectionIdsRef = useRef<string[]>([]);
+  const sectionPointsEarnedRef = useRef<Record<string, number>>({});
   const dirtyAnswerKeysRef = useRef<Set<string>>(new Set());
   const isSavingRef = useRef(false);
   const saveAgainRef = useRef(false);
@@ -125,9 +128,11 @@ export function DayJournal({
     setAnswers({});
     answersRef.current = {};
     completedSectionIdsRef.current = [];
+    sectionPointsEarnedRef.current = {};
     dirtyAnswerKeysRef.current.clear();
     queuedApprovedReplacementKeysRef.current.clear();
     setCompletedSectionIds([]);
+    setSectionPointsEarned({});
     setFailedAnswerKeys([]);
     setApprovedReplacementKeys([]);
 
@@ -188,9 +193,11 @@ export function DayJournal({
       setAnswers(result.data.answers);
       answersRef.current = result.data.answers;
       completedSectionIdsRef.current = result.data.completedSectionIds;
+      sectionPointsEarnedRef.current = result.data.sectionPointsEarned;
       dirtyAnswerKeysRef.current.clear();
       queuedApprovedReplacementKeysRef.current.clear();
       setCompletedSectionIds(result.data.completedSectionIds);
+      setSectionPointsEarned(result.data.sectionPointsEarned);
       setNeedsReauth(result.data.needsReauth);
       setFailedAnswerKeys(result.data.failedAnswerKeys);
       setApprovedReplacementKeys([]);
@@ -257,6 +264,7 @@ export function DayJournal({
       weekNumber,
       dayNumber: day.dayNumber,
       completedSectionIds: completedSectionIdsRef.current,
+      sectionPointsEarned: sectionPointsEarnedRef.current,
       blockedAnswerKeys,
       answers: answerPayload
     });
@@ -336,7 +344,7 @@ export function DayJournal({
       return { ok: true };
     }
 
-    const expectedCompletedSectionIds = new Set(completedSectionIdsRef.current);
+    const expectedPointsBySectionId = sectionPointsEarnedRef.current;
     const waitTimesMs = [0, 300, 900];
     let failures: ProgressVerificationFailure[] = [];
     let lastLoaded: JournalDayState | null = null;
@@ -358,16 +366,16 @@ export function DayJournal({
       }
 
       lastLoaded = loaded.data;
-      const loadedCompletedSectionIds = new Set(loaded.data.completedSectionIds);
       failures = day.sections.flatMap<ProgressVerificationFailure>((section) => {
-        const expectedCompleted = expectedCompletedSectionIds.has(section.id);
-        const actualCompleted = loadedCompletedSectionIds.has(section.id);
+        const expectedPointsEarned = getClampedSectionPoints(section, expectedPointsBySectionId[section.id] ?? 0);
+        const actualPointsEarned = getClampedSectionPoints(section, loaded.data.sectionPointsEarned[section.id] ?? 0);
 
-        return expectedCompleted === actualCompleted
+        return expectedPointsEarned === actualPointsEarned
           ? []
           : [
               {
-                expectedCompleted,
+                actualPointsEarned,
+                expectedPointsEarned,
                 progressId: loaded.data.expectedProgressIdsBySectionId[section.id],
                 sectionId: section.id
               }
@@ -503,18 +511,40 @@ export function DayJournal({
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [answers, completedSectionIds]);
+  }, [answers, completedSectionIds, sectionPointsEarned]);
 
   function toggleSection(sectionId: string) {
     hasUserChangedRef.current = true;
     setSaveStatus("idle");
     setSaveError("");
-    const nextCompletedSectionIds = completedSectionIdsRef.current.includes(sectionId)
-      ? completedSectionIdsRef.current.filter((id) => id !== sectionId)
-      : [...completedSectionIdsRef.current, sectionId];
-    completedSectionIdsRef.current = nextCompletedSectionIds;
-    setCompletedSectionIds(nextCompletedSectionIds);
+    const section = day?.sections.find((candidate) => candidate.id === sectionId);
+    const nextPoints = completedSectionIdsRef.current.includes(sectionId) ? 0 : getSectionMaxPoints(section);
+    updateSectionProgress(sectionId, nextPoints);
     void saveRef.current();
+  }
+
+  function updatePartialSection(section: ProgramSection, completionCount: number) {
+    hasUserChangedRef.current = true;
+    setSaveStatus("idle");
+    setSaveError("");
+    updateSectionProgress(section.id, getPointsFromCompletionCount(section, completionCount));
+  }
+
+  function updateSectionProgress(sectionId: string, pointsEarned: number) {
+    const nextPointsEarned = getClampedSectionPoints(
+      day?.sections.find((candidate) => candidate.id === sectionId),
+      pointsEarned
+    );
+    const nextSectionPointsEarned = { ...sectionPointsEarnedRef.current, [sectionId]: nextPointsEarned };
+    const nextCompletedSectionIds =
+      nextPointsEarned > 0
+        ? Array.from(new Set([...completedSectionIdsRef.current, sectionId]))
+        : completedSectionIdsRef.current.filter((id) => id !== sectionId);
+
+    sectionPointsEarnedRef.current = nextSectionPointsEarned;
+    completedSectionIdsRef.current = nextCompletedSectionIds;
+    setSectionPointsEarned(nextSectionPointsEarned);
+    setCompletedSectionIds(nextCompletedSectionIds);
   }
 
   function updateAnswer(promptId: string, sectionId: string, value: string) {
@@ -529,7 +559,12 @@ export function DayJournal({
       if (!completedSectionIdsRef.current.includes(sectionId)) {
         const nextCompletedSectionIds = [...completedSectionIdsRef.current, sectionId];
         completedSectionIdsRef.current = nextCompletedSectionIds;
+        sectionPointsEarnedRef.current = {
+          ...sectionPointsEarnedRef.current,
+          [sectionId]: getSectionMaxPoints(day?.sections.find((section) => section.id === sectionId))
+        };
         setCompletedSectionIds(nextCompletedSectionIds);
+        setSectionPointsEarned(sectionPointsEarnedRef.current);
       }
     }
   }
@@ -550,6 +585,55 @@ export function DayJournal({
   function resizeTextarea(element: HTMLTextAreaElement) {
     element.style.height = "auto";
     element.style.height = `${element.scrollHeight}px`;
+  }
+
+  function isPartialSection(section: ProgramSection): boolean {
+    return Boolean(section.maxCompletions && section.maxCompletions > 1 && section.pointsPerCompletion);
+  }
+
+  function getSectionMaxPoints(section?: ProgramSection): number {
+    return Math.max(0, section?.points ?? 0);
+  }
+
+  function getClampedSectionPoints(section: ProgramSection | undefined, pointsEarned: number): number {
+    if (!Number.isFinite(pointsEarned)) {
+      return 0;
+    }
+
+    return Math.min(getSectionMaxPoints(section), Math.max(0, Math.round(pointsEarned)));
+  }
+
+  function getCompletionCount(section: ProgramSection, pointsEarned: number): number {
+    const pointsPerCompletion = section.pointsPerCompletion ?? 1;
+    return Math.min(section.maxCompletions ?? 1, Math.max(0, Math.round(pointsEarned / pointsPerCompletion)));
+  }
+
+  function getCompletionOptions(section: ProgramSection): number[] {
+    return Array.from({ length: (section.maxCompletions ?? 0) + 1 }, (_, index) => index);
+  }
+
+  function getPointsFromCompletionCount(section: ProgramSection, completionCount: number): number {
+    const maxCompletions = section.maxCompletions ?? 1;
+    const pointsPerCompletion = section.pointsPerCompletion ?? 1;
+    const clampedCount = Math.min(maxCompletions, Math.max(0, Math.round(completionCount)));
+    return getClampedSectionPoints(section, clampedCount * pointsPerCompletion);
+  }
+
+  function getSectionPointLabel(section: ProgramSection): string {
+    if (!isPartialSection(section)) {
+      return formatPoints(section.points);
+    }
+
+    const unit = section.completionUnit ?? "completion";
+    const pluralUnit = unit.endsWith("s") ? unit : `${unit}s`;
+    const pointsPerCompletion = section.pointsPerCompletion ?? 1;
+    return `${formatPoints(pointsPerCompletion)} per ${unit}, ${section.maxCompletions} ${pluralUnit} max`;
+  }
+
+  function getCompletionControlLabel(section: ProgramSection): string {
+    const unit = section.completionUnit ?? "completion";
+    const pluralUnit = unit.endsWith("s") ? unit : `${unit}s`;
+    return `${capitalize(pluralUnit)} completed`;
   }
 
   function getAnswerPayload(
@@ -606,9 +690,11 @@ export function DayJournal({
 
 
   const dayMaxPoints = day?.sections.reduce((sum, s) => sum + Math.max(0, s.points), 0) ?? 0;
-  const dayEarnedPoints = day?.sections
-    .filter((s) => completedSectionIds.includes(s.id))
-    .reduce((sum, s) => sum + Math.max(0, s.points), 0) ?? 0;
+  const dayEarnedPoints =
+    day?.sections.reduce(
+      (sum, section) => sum + getClampedSectionPoints(section, sectionPointsEarned[section.id] ?? 0),
+      0
+    ) ?? 0;
   const dayProgressPct = dayMaxPoints > 0 ? Math.round((dayEarnedPoints / dayMaxPoints) * 100) : 0;
 
   return (
@@ -621,7 +707,7 @@ export function DayJournal({
 
       <section className="panel stack">
         <div className="row">
-          <h1>{day ? `${getProgramDayLabel(day.dayNumber)}: ${day.title}` : "Program day"}</h1>
+          <h1>{day ? getProgramDayDisplayName(day) : "Program day"}</h1>
           <div className="row" style={{ justifyContent: "flex-end" }}>
             <p className="muted" aria-live="polite" style={{ whiteSpace: "nowrap" }}>
               {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : saveStatus === "error" ? saveError : ""}
@@ -658,22 +744,53 @@ export function DayJournal({
       ) : null}
 
       {isJournalLoaded && !needsReauth && day?.sections.map((section) => (
-        <section className={`panel${completedSectionIds.includes(section.id) ? " section-complete" : ""}`} key={section.id}>
+        <section className={`panel${(sectionPointsEarned[section.id] ?? 0) > 0 ? " section-complete" : ""}`} key={section.id}>
           <div className="section-layout">
-            <label className="section-check" aria-label={`Mark ${section.title} complete`}>
-              <input
-                checked={completedSectionIds.includes(section.id)}
-                onChange={() => toggleSection(section.id)}
-                type="checkbox"
-              />
-            </label>
+            {isPartialSection(section) ? (
+              <span className="section-check" aria-hidden="true" />
+            ) : (
+              <label className="section-check" aria-label={`Mark ${section.title} complete`}>
+                <input
+                  checked={completedSectionIds.includes(section.id)}
+                  onChange={() => toggleSection(section.id)}
+                  type="checkbox"
+                />
+              </label>
+            )}
 
             <div className="section-content">
               <div>
-                <p className="eyebrow">{formatPoints(section.points)}</p>
+                <p className="eyebrow">{getSectionPointLabel(section)}</p>
                 <h2>{section.title}</h2>
               </div>
               {section.body ? <p>{section.body}</p> : null}
+              {isPartialSection(section) ? (
+                <div className="field compact-field">
+                  <span>{getCompletionControlLabel(section)}</span>
+                  <div className="completion-picker" role="group" aria-label={getCompletionControlLabel(section)}>
+                    {getCompletionOptions(section).map((completionCount) => {
+                      const selected = completionCount === getCompletionCount(section, sectionPointsEarned[section.id] ?? 0);
+
+                      return (
+                        <button
+                          className={selected ? "active" : ""}
+                          key={completionCount}
+                          onClick={() => {
+                            updatePartialSection(section, completionCount);
+                            void saveRef.current();
+                          }}
+                          type="button"
+                        >
+                          {completionCount}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <small className="muted">
+                    {sectionPointsEarned[section.id] ?? 0}/{section.points} points
+                  </small>
+                </div>
+              ) : null}
               {section.scripture?.map((scripture) => (
                 <blockquote className="scripture" key={scripture.reference}>
                   <strong>{scripture.reference}</strong>
@@ -704,7 +821,7 @@ export function DayJournal({
                             resizeTextarea(event.currentTarget);
                           }}
                           onBlur={() => void saveRef.current()}
-                          placeholder={decryptFailed ? "Type replacement text here" : "Optional reflection"}
+                          placeholder={decryptFailed ? "Type replacement text here" : "Write your response"}
                         />
                           {decryptFailed && !replacementApproved ? (
                             <button
@@ -738,7 +855,7 @@ export function DayJournal({
                             resizeTextarea(event.currentTarget);
                           }}
                           onBlur={() => void saveRef.current()}
-                          placeholder={decryptFailed ? "Type replacement text here" : "Optional reflection"}
+                          placeholder={decryptFailed ? "Type replacement text here" : "Write your response"}
                         />
                         {decryptFailed && !replacementApproved ? (
                           <button
@@ -759,4 +876,8 @@ export function DayJournal({
 
     </div>
   );
+}
+
+function capitalize(value: string): string {
+  return value.length > 0 ? `${value[0].toUpperCase()}${value.slice(1)}` : value;
 }

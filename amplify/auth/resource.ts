@@ -3,7 +3,7 @@ import { defineAuth } from "@aws-amplify/backend";
 export const auth = defineAuth({
   loginWith: {
     email: {
-      verificationEmailSubject: "Verify your Men's Group Journal account"
+      verificationEmailSubject: "Verify your Priority One Deep Roots account"
     }
   },
   groups: ["ADMINS", "LEADERS"],

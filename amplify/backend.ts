@@ -1,9 +1,11 @@
 import { defineBackend } from "@aws-amplify/backend";
+import { CfnUserPoolUserToGroupAttachment } from "aws-cdk-lib/aws-cognito";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { auth } from "./auth/resource.ts";
 import { data } from "./data/resource.ts";
 import { joinGroupByCode } from "./functions/join-group-by-code/resource.ts";
 import { manageAdminUsers } from "./functions/manage-admin-users/resource.ts";
+import { syncDisplayName } from "./functions/sync-display-name/resource.ts";
 import { syncUserScore } from "./functions/sync-user-score/resource.ts";
 
 const backend = defineBackend({
@@ -11,10 +13,21 @@ const backend = defineBackend({
   data,
   joinGroupByCode,
   manageAdminUsers,
+  syncDisplayName,
   syncUserScore
 });
 
 backend.manageAdminUsers.addEnvironment("USER_POOL_ID", backend.auth.resources.userPool.userPoolId);
+const bootstrapAdminEmail = process.env.DEEP_ROOTS_BOOTSTRAP_ADMIN_EMAIL?.trim();
+
+if (bootstrapAdminEmail) {
+  new CfnUserPoolUserToGroupAttachment(backend.auth.resources.userPool, "BootstrapAdminUser", {
+    groupName: "ADMINS",
+    username: bootstrapAdminEmail,
+    userPoolId: backend.auth.resources.userPool.userPoolId
+  });
+}
+
 backend.manageAdminUsers.resources.lambda.addToRolePolicy(
   new PolicyStatement({
     actions: [
@@ -71,5 +84,14 @@ backend.syncUserScore.resources.lambda.addToRolePolicy(
       userScoreTable.tableArn,
       userProfileTable.tableArn
     ]
+  })
+);
+
+backend.syncDisplayName.addEnvironment("USER_SCORE_TABLE_NAME", userScoreTable.tableName);
+backend.syncDisplayName.addEnvironment("USER_SCORE_USER_ID_INDEX_NAME", "userScoresByUserId");
+backend.syncDisplayName.resources.lambda.addToRolePolicy(
+  new PolicyStatement({
+    actions: ["dynamodb:Query", "dynamodb:UpdateItem"],
+    resources: [userScoreTable.tableArn, `${userScoreTable.tableArn}/index/*`]
   })
 );

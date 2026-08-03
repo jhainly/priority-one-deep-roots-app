@@ -88,11 +88,11 @@ export function AdminGroupsPanel() {
             <div className="grid two">
               <label className="field">
                 <span>Group name</span>
-                <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Tuesday Morning Men" required />
+                <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Deep Roots Team 1" required />
               </label>
               <label className="field">
                 <span>Join code</span>
-                <input value={joinCode} onChange={(event) => setJoinCode(event.target.value)} placeholder="GRACE-2026" required />
+                <input value={joinCode} onChange={(event) => setJoinCode(event.target.value)} placeholder="ROOTS-2026" required />
               </label>
             </div>
             <div>

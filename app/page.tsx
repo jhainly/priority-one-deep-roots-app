@@ -11,11 +11,11 @@ export default async function HomePage() {
 
   return (
     <section className="panel stack">
-      <p className="eyebrow">Private discipleship journal</p>
-      <h1>Lifepoint Men&apos;s Group Journal</h1>
+      <p className="eyebrow">8-week team training</p>
+      <h1>Priority One Deep Roots</h1>
       <p>
-        A focused place for Lifepoint Church men&apos;s groups to walk through guided weekly programs, keep personal
-        reflections private, track steady participation, and stay connected with their group.
+        A focused place for Deep Roots teams to build spiritual, relational, and physical foundations through daily
+        assignments, private reflection, accountability, and healthy competition.
       </p>
       <div className="row">
         <Link className="button" href="/auth">Sign in</Link>

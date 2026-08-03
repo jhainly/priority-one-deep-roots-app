@@ -10,7 +10,7 @@ export type JournalKeyEnvelope = {
   version: 1 | 2;
 };
 
-const STORAGE_KEY = "mgj_journal_key";
+const STORAGE_KEY = "deep_roots_journal_key";
 const ITERATIONS = 310000;
 const KEY_LENGTH = 256;
 const JOURNAL_KEY_BYTES = 32;

@@ -19,6 +19,7 @@ export type ProgramWeek = {
 
 export type ProgramDay = {
   dayNumber: number;
+  label?: string;
   title: string;
   sections: ProgramSection[];
 };
@@ -27,6 +28,9 @@ export type ProgramSection = {
   id: string;
   title: string;
   body?: string;
+  completionUnit?: string;
+  maxCompletions?: number;
+  pointsPerCompletion?: number;
   scripture?: ScriptureBlock[];
   prompts?: ProgramPrompt[];
   points: number;

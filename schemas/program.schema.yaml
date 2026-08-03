@@ -1,24 +1,36 @@
 program:
-  id: lifepoint-mens-group-v1
-  title: Lifepoint Men's Group
+  id: priority-one-deep-roots-week-5
+  title: Deep Roots
   version: "1.0.0"
-  description: A short discipleship and journaling program.
+  description: Week Five Mission from the Deep Roots weekly missions format.
 weeks:
-  - weekNumber: 1
-    title: Foundation
-    summary: Identity, confession, and daily obedience.
+  - weekNumber: 5
+    title: Week Five Mission
+    summary: Complete by Friday at midnight. The app automatically tracks individual and team scores.
     days:
       - dayNumber: 1
-        title: Begin Honestly
+        label: Weekly Missions
+        title: Weekly Missions
         sections:
-          - id: identity
-            title: Identity
-            body: Consider what you are carrying into this week.
-            points: 10
-            scripture:
-              - reference: Psalm 139:23-24
-                text: Search me, God, and know my heart; test me and know my anxious thoughts.
+          - id: weekly-check-in
+            title: Weekly Check-In
+            body: Review your Week Five mission progress in the app by Friday at midnight.
+            points: 1
+          - id: aerobic-exercise
+            title: Aerobic Exercise
+            body: 20 minutes, 3 days this week.
+            completionUnit: day
+            maxCompletions: 3
+            points: 3
+            pointsPerCompletion: 1
+      - dayNumber: 2
+        label: Monday
+        title: Reading and Reflection
+        sections:
+          - id: growth-challenge
+            title: Growth & Challenge
+            body: Write your answer to the daily reflection question.
+            points: 1
             prompts:
-              - id: prompt-1
-                label: What do you need to bring into the light today?
-                optional: true
+              - id: monday-growth
+                label: Why do you live where you live? What went into that decision?

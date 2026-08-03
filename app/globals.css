@@ -70,6 +70,14 @@ button {
   line-height: 1.25;
 }
 
+.brand-mark {
+  border-radius: 6px;
+  flex: 0 0 auto;
+  height: 28px;
+  object-fit: contain;
+  width: 28px;
+}
+
 .nav {
   display: flex;
   flex-wrap: wrap;
@@ -651,6 +659,45 @@ details[open] > .group-accordion-summary:hover {
   color: #fff;
 }
 
+.completion-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.completion-picker button {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--accent-strong);
+  font-weight: 700;
+  min-height: 38px;
+  min-width: 42px;
+  padding: 0 12px;
+}
+
+.completion-picker button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.completion-picker button:disabled {
+  cursor: default;
+}
+
+.completion-picker.preview button:not(.active) {
+  opacity: 0.68;
+}
+
+.leaderboard-grid {
+  align-items: start;
+}
+
+.leaderboard-list {
+  min-width: 0;
+}
+
 .leaderboard-row {
   align-items: center;
   display: grid;
@@ -701,6 +748,15 @@ details[open] > .group-accordion-summary:hover {
 .render-preview-section h3 {
   font-size: 1.05rem;
   margin-bottom: 0;
+}
+
+.preview-partial-control {
+  max-width: 260px;
+}
+
+.preview-partial-control small {
+  color: var(--muted);
+  line-height: 1.4;
 }
 
 .scripture {

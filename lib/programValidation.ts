@@ -17,6 +17,9 @@ const sectionSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
   body: z.string().optional(),
+  completionUnit: z.string().min(1).optional(),
+  maxCompletions: z.number().int().positive().optional(),
+  pointsPerCompletion: z.number().int().positive().optional(),
   scripture: z.array(scriptureSchema).optional(),
   prompts: z.array(promptSchema).optional(),
   points: z.number().int().nonnegative()
@@ -24,6 +27,7 @@ const sectionSchema = z.object({
 
 const daySchema = z.object({
   dayNumber: z.number().int().positive(),
+  label: z.string().min(1).optional(),
   title: z.string().min(1),
   sections: z.array(sectionSchema).min(1)
 });
