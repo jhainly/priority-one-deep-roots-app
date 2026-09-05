@@ -122,6 +122,14 @@ function layoutJournalExport(input: JournalExportInput): PdfPage[] {
           addWrapped("", `${scripture.reference}: ${scripture.text}`, { indent: 1, italic: true }, 20, SCRIPTURE_MAX_CHARS);
         }
 
+        if (section.breathPrayer && section.breathPrayer.length > 0) {
+          addWrapped("", "Breathe the following prayer:", { indent: 1, bold: true }, 8);
+          for (const [pairIndex, pair] of section.breathPrayer.entries()) {
+            addWrapped("", `Inhale ${pairIndex + 1}: ${pair.inhale}`, { indent: 1.2 }, 2);
+            addWrapped("", `Exhale ${pairIndex + 1}: ${pair.exhale}`, { indent: 1.2 }, 8);
+          }
+        }
+
         const prompts = section.prompts ?? [];
         if (prompts.length > 0) {
           const promptStorageIds = journalPromptStorageIds(prompts);

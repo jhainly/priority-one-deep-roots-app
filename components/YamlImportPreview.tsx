@@ -377,6 +377,25 @@ function RenderedSectionPreview({ section }: { section: ProgramSection }) {
               <p>{scripture.text}</p>
             </blockquote>
           ))}
+          {section.breathPrayer && section.breathPrayer.length > 0 ? (
+            <div className="breath-prayer" aria-label="Breath prayer preview">
+              <p className="eyebrow">Breathe the following prayer</p>
+              <div className="breath-prayer-grid">
+                {section.breathPrayer.map((pair, pairIndex) => (
+                  <div className="breath-prayer-row" key={`${pair.inhale}-${pairIndex}`}>
+                    <div>
+                      <span>Inhale {pairIndex + 1}</span>
+                      <p>{pair.inhale}</p>
+                    </div>
+                    <div>
+                      <span>Exhale {pairIndex + 1}</span>
+                      <p>{pair.exhale}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
           {section.prompts?.map((prompt) => (
             <label className="field" key={prompt.id}>
               <span>{prompt.label}</span>

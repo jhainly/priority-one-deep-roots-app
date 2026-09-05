@@ -765,6 +765,46 @@ details[open] > .group-accordion-summary:hover {
   padding-left: 12px;
 }
 
+.breath-prayer {
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line));
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.breath-prayer-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.breath-prayer-row {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.breath-prayer-row > div {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.breath-prayer-row span {
+  color: var(--accent-strong);
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.breath-prayer-row p {
+  margin: 0;
+}
+
 .warning {
   color: var(--warn);
   font-weight: 700;
@@ -883,6 +923,10 @@ details[open] > .group-accordion-summary:hover {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .breath-prayer-row {
+    grid-template-columns: 1fr;
   }
 
 }

@@ -34,3 +34,13 @@ weeks:
             prompts:
               - id: monday-growth
                 label: Why do you live where you live? What went into that decision?
+          - id: spiritual-action
+            title: "Spiritual Action: Reading and Reflection"
+            body: Read Matthew 17:1-13.
+            breathPrayer:
+              - inhale: Lord Jesus...
+                exhale: Help me follow You.
+            points: 1
+            prompts:
+              - id: monday-q1
+                label: What is God teaching you through today's reading?

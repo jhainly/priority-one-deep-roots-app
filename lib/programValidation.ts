@@ -13,6 +13,11 @@ const scriptureSchema = z.object({
   text: z.string().min(1)
 });
 
+const breathPrayerPairSchema = z.object({
+  inhale: z.string().min(1),
+  exhale: z.string().min(1)
+});
+
 const sectionSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
@@ -20,6 +25,7 @@ const sectionSchema = z.object({
   completionUnit: z.string().min(1).optional(),
   maxCompletions: z.number().int().positive().optional(),
   pointsPerCompletion: z.number().int().positive().optional(),
+  breathPrayer: z.array(breathPrayerPairSchema).optional(),
   scripture: z.array(scriptureSchema).optional(),
   prompts: z.array(promptSchema).optional(),
   points: z.number().int().nonnegative()

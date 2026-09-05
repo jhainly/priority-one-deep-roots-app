@@ -31,9 +31,15 @@ export type ProgramSection = {
   completionUnit?: string;
   maxCompletions?: number;
   pointsPerCompletion?: number;
+  breathPrayer?: BreathPrayerPair[];
   scripture?: ScriptureBlock[];
   prompts?: ProgramPrompt[];
   points: number;
+};
+
+export type BreathPrayerPair = {
+  inhale: string;
+  exhale: string;
 };
 
 export type ScriptureBlock = {
