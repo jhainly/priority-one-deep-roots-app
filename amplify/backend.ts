@@ -1,4 +1,5 @@
 import { defineBackend } from "@aws-amplify/backend";
+import { Stack } from "aws-cdk-lib";
 import { CfnUserPoolUserToGroupAttachment } from "aws-cdk-lib/aws-cognito";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { auth } from "./auth/resource.ts";
@@ -16,6 +17,16 @@ const backend = defineBackend({
   syncDisplayName,
   syncUserScore
 });
+
+backend.auth.resources.cfnResources.cfnUserPool.emailConfiguration = {
+  emailSendingAccount: "DEVELOPER",
+  from: "Deep Roots <deeproots-no-reply@priorityone.org>",
+  sourceArn: Stack.of(backend.auth.resources.userPool).formatArn({
+    service: "ses",
+    resource: "identity",
+    resourceName: "priorityone.org"
+  })
+};
 
 backend.manageAdminUsers.addEnvironment("USER_POOL_ID", backend.auth.resources.userPool.userPoolId);
 const bootstrapAdminEmail = process.env.DEEP_ROOTS_BOOTSTRAP_ADMIN_EMAIL?.trim();
