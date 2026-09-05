@@ -38,10 +38,21 @@ const daySchema = z.object({
   sections: z.array(sectionSchema).min(1)
 });
 
+const sourcePdfUrlSchema = z
+  .string()
+  .min(1)
+  .refine((value) => value.startsWith("/") && !value.startsWith("//"), {
+    message: "Source PDF URLs must be site-relative paths such as /program-pdfs/deep-roots-week-1.pdf."
+  })
+  .refine((value) => value.toLowerCase().split("?")[0].endsWith(".pdf"), {
+    message: "Source PDF URLs must point to a PDF file."
+  });
+
 const weekSchema = z.object({
   weekNumber: z.number().int().positive(),
   title: z.string().min(1),
   summary: z.string().optional(),
+  sourcePdfUrl: sourcePdfUrlSchema.optional(),
   days: z.array(daySchema).min(1)
 });
 

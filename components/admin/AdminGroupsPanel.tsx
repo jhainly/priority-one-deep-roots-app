@@ -15,7 +15,7 @@ export function AdminGroupsPanel() {
   const [name, setName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [groups, setGroups] = useState<AdminGroupSummary[]>([]);
-  const [directoryStatus, setDirectoryStatus] = useState("Loading groups...");
+  const [directoryStatus, setDirectoryStatus] = useState("Loading teams...");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -50,7 +50,7 @@ export function AdminGroupsPanel() {
     setSelectedGroupId(result.data);
     setGroups((current) => mergeGroups(current, [createdGroup]));
     setDirectoryStatus("");
-    setMessage("Group created.");
+    setMessage("Team created.");
     setName("");
     setJoinCode("");
     setShowCreateForm(false);
@@ -58,7 +58,7 @@ export function AdminGroupsPanel() {
   }
 
   async function refreshGroups() {
-    setDirectoryStatus("Loading groups...");
+    setDirectoryStatus("Loading teams...");
     const result = await listAdminGroups();
 
     if (!result.ok) {
@@ -68,7 +68,7 @@ export function AdminGroupsPanel() {
 
     const mergedGroups = mergeGroups(result.data, optimisticGroupsRef.current);
     setGroups(mergedGroups);
-    setDirectoryStatus(mergedGroups.length > 0 ? "" : "No groups have been created yet.");
+    setDirectoryStatus(mergedGroups.length > 0 ? "" : "No teams have been created yet.");
   }
 
   return (
@@ -77,9 +77,9 @@ export function AdminGroupsPanel() {
 
       <section className="panel stack" id="groups">
         <div className="row">
-          <h2>Groups</h2>
+          <h2>Teams</h2>
           <button className="button" onClick={() => setShowCreateForm((v) => !v)} type="button">
-            {showCreateForm ? "Cancel" : "New group"}
+            {showCreateForm ? "Cancel" : "New team"}
           </button>
         </div>
 
@@ -87,7 +87,7 @@ export function AdminGroupsPanel() {
           <form className="stack" id="create-group" onSubmit={handleSubmit}>
             <div className="grid two">
               <label className="field">
-                <span>Group name</span>
+                <span>Team name</span>
                 <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Deep Roots Team 1" required />
               </label>
               <label className="field">
@@ -97,7 +97,7 @@ export function AdminGroupsPanel() {
             </div>
             <div>
               <button className="button" disabled={isSubmitting} type="submit">
-                {isSubmitting ? "Creating..." : "Create group"}
+                {isSubmitting ? "Creating..." : "Create team"}
               </button>
             </div>
           </form>
@@ -112,7 +112,7 @@ export function AdminGroupsPanel() {
                 <div>
                   <strong>{group.name}</strong>
                   <p className="muted">
-                    {group.memberCount} {group.memberCount === 1 ? "member" : "members"} · {group.leaderCount} {group.leaderCount === 1 ? "leader" : "leaders"}{group.joinCode ? ` · code: ${group.joinCode}` : ""}
+                    {group.memberCount} {group.memberCount === 1 ? "member" : "members"} - {group.leaderCount} {group.leaderCount === 1 ? "leader" : "leaders"}{group.joinCode ? ` - code: ${group.joinCode}` : ""}
                   </p>
                 </div>
                 <Link className="button secondary" href={`/admin/groups/${group.groupId}`}>

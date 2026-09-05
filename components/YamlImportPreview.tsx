@@ -110,7 +110,7 @@ export function YamlImportPreview({ embedded = false, groups: providedGroups, on
 
   async function publish() {
     if (!preview || selectedGroupIds.length === 0) {
-      setMessage("Choose at least one group before publishing.");
+      setMessage("Choose at least one team before publishing.");
       return;
     }
 
@@ -162,12 +162,12 @@ export function YamlImportPreview({ embedded = false, groups: providedGroups, on
         <section className="panel stack import-program-panel">
           <h2>YAML source</h2>
           <label className="field">
-            <span>Program content</span>
+            <span>Weekly mission content</span>
             <textarea value={source} onChange={(event) => setSource(event.target.value)} />
           </label>
           {groups.length > 0 ? (
             <fieldset className="field">
-              <span>Groups</span>
+              <span>Teams</span>
               <div className="stack compact-stack">
                 {groups.map((group) => (
                   <label className="checkbox-row" key={group.groupId}>
@@ -182,10 +182,10 @@ export function YamlImportPreview({ embedded = false, groups: providedGroups, on
               </div>
             </fieldset>
           ) : (
-            <p className="muted">Create a Deep Roots group before publishing a program.</p>
+            <p className="muted">Create a team before publishing a weekly mission.</p>
           )}
           <button className="button" type="button" onClick={validate}>
-            Preview program
+            Preview mission
           </button>
         </section>
       </div>
@@ -215,11 +215,11 @@ export function YamlImportPreview({ embedded = false, groups: providedGroups, on
                 ))}
               </ul>
             ) : (
-              <p>No semantic warnings.</p>
+              <p>No import warnings.</p>
             )}
             {replacementImpacts.length > 0 ? (
               <section className="warning-box stack">
-                <h3>Existing weeks will be replaced</h3>
+                <h3>Existing weekly missions will be replaced</h3>
                 <ul>
                   {replacementImpacts.map((impact) => (
                     <li key={`${impact.groupId}:${impact.weekNumber}`}>
@@ -238,11 +238,11 @@ export function YamlImportPreview({ embedded = false, groups: providedGroups, on
               weeks={preview.program.weeks}
             />
             <button className="button secondary" type="button" onClick={publish}>
-              Publish weeks
+              Publish weekly mission
             </button>
           </>
         ) : (
-          <p>No valid preview yet.</p>
+          <p>Preview a Deep Roots weekly mission to review it here.</p>
         )}
         {message ? <p>{message}</p> : null}
       </section>
@@ -263,7 +263,7 @@ function getReplacementConfirmationText(impacts: WeekReplacementImpact[]): strin
   );
 
   return [
-    "Publishing will replace existing active week content for the selected groups.",
+    "Publishing will replace existing active week content for the selected teams.",
     "",
     ...lines,
     "",
@@ -323,6 +323,15 @@ function RenderedProgramPreview({
             {getProgramDayDisplayName(day)}
           </h2>
           {week.summary ? <p>{week.summary}</p> : null}
+          {week.sourcePdfUrl ? (
+            <p>
+              <a href={week.sourcePdfUrl} rel="noreferrer" target="_blank">
+                Source PDF attached
+              </a>
+            </p>
+          ) : (
+            <p className="muted">No source PDF attached for this week.</p>
+          )}
         </div>
       </section>
 

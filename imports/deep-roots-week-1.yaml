@@ -7,6 +7,7 @@ weeks:
   - weekNumber: 1
     title: Week One Mission
     summary: Complete the Week One mission by Friday at midnight.
+    sourcePdfUrl: /program-pdfs/deep-roots-week-1.pdf
     days:
       - dayNumber: 1
         label: Weekly Missions

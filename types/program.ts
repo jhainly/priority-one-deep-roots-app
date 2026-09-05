@@ -14,6 +14,7 @@ export type ProgramWeek = {
   weekNumber: number;
   title: string;
   summary?: string;
+  sourcePdfUrl?: string;
   days: ProgramDay[];
 };
 

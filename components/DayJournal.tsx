@@ -57,8 +57,8 @@ export function DayJournal({
   const [needsReauth, setNeedsReauth] = useState(false);
   const [failedAnswerKeys, setFailedAnswerKeys] = useState<string[]>([]);
   const [approvedReplacementKeys, setApprovedReplacementKeys] = useState<string[]>([]);
-  const [groupStatus, setGroupStatus] = useState("Loading group...");
-  const [programStatus, setProgramStatus] = useState("Loading program...");
+  const [groupStatus, setGroupStatus] = useState("Loading team...");
+  const [programStatus, setProgramStatus] = useState("Loading weekly mission...");
   const [journalStatus, setJournalStatus] = useState("");
   const [isJournalLoaded, setIsJournalLoaded] = useState(false);
 
@@ -95,7 +95,7 @@ export function DayJournal({
         setSelectedGroupId(selectedGroup.groupId);
         setGroupStatus("");
       } else {
-        setGroupStatus("Join a group before saving progress.");
+        setGroupStatus("Join a team before saving progress.");
       }
     });
 
@@ -120,7 +120,7 @@ export function DayJournal({
     hasUserChangedRef.current = false;
     setProgram(null);
     setDay(null);
-    setProgramStatus("Loading program...");
+    setProgramStatus("Loading weekly mission...");
     setJournalStatus("");
     setIsJournalLoaded(false);
     setSaveStatus("idle");
@@ -154,7 +154,7 @@ export function DayJournal({
 
       setProgram(activeProgram);
       setDay(activeDay);
-      setProgramStatus(activeDay ? "" : "That day is not available in the active program.");
+      setProgramStatus(activeDay ? "" : "That day is not available in the active Deep Roots mission.");
     });
 
     return () => {
@@ -701,13 +701,13 @@ export function DayJournal({
     <div className="stack">
       <div>
         <Link className="button" href={`/dashboard?week=${weekNumber}`}>
-          Back to week {weekNumber}
+          Back to Week {weekNumber}
         </Link>
       </div>
 
       <section className="panel stack">
         <div className="row">
-          <h1>{day ? getProgramDayDisplayName(day) : "Program day"}</h1>
+          <h1>{day ? getProgramDayDisplayName(day) : "Mission day"}</h1>
           <div className="row" style={{ justifyContent: "flex-end" }}>
             <p className="muted" aria-live="polite" style={{ whiteSpace: "nowrap" }}>
               {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : saveStatus === "error" ? saveError : ""}

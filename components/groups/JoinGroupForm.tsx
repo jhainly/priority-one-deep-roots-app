@@ -31,16 +31,16 @@ export function JoinGroupForm({ accountConfirmed = false }: { accountConfirmed?:
   return (
     <form className="panel stack" onSubmit={handleSubmit}>
       <div>
-        <h1>Join a group</h1>
-        {accountConfirmed ? <p className="muted">Your account is verified. Enter your group code to continue.</p> : null}
+        <h1>Join your team</h1>
+        {accountConfirmed ? <p className="muted">Your account is verified. Enter your team code to continue.</p> : null}
       </div>
       <label className="field">
-        <span>Group code</span>
-        <input value={groupCode} onChange={(event) => setGroupCode(event.target.value)} placeholder="Example: GRACE-2026" required />
+        <span>Team code</span>
+        <input value={groupCode} onChange={(event) => setGroupCode(event.target.value)} placeholder="Example: ROOTS-2026" required />
       </label>
       {message ? <p className="warning">{message}</p> : null}
       <button className="button" disabled={isSubmitting} type="submit">
-        {isSubmitting ? "Joining..." : "Join group"}
+        {isSubmitting ? "Joining..." : "Join team"}
       </button>
     </form>
   );

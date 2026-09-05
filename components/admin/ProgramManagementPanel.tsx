@@ -17,18 +17,18 @@ export function ProgramManagementPanel({
   onProgramChanged: () => void;
 }) {
   const [assignments, setAssignments] = useState<ProgramWeekAssignment[]>([]);
-  const [assignmentStatus, setAssignmentStatus] = useState("Loading group assignments...");
+  const [assignmentStatus, setAssignmentStatus] = useState("Loading team assignments...");
   const [message, setMessage] = useState("");
   const [removingKey, setRemovingKey] = useState("");
 
   const refreshAssignments = useCallback(async () => {
     if (groups.length === 0) {
       setAssignments([]);
-      setAssignmentStatus("Create a group before managing programs.");
+      setAssignmentStatus("Create a team before managing weekly missions.");
       return;
     }
 
-    setAssignmentStatus("Loading group assignments...");
+    setAssignmentStatus("Loading team assignments...");
     const result = await listProgramWeekAssignments(groups);
 
     if (!result.ok) {
@@ -38,7 +38,7 @@ export function ProgramManagementPanel({
     }
 
     setAssignments(result.data);
-    setAssignmentStatus(result.data.length > 0 ? "" : "No groups found.");
+    setAssignmentStatus(result.data.length > 0 ? "" : "No teams found.");
   }, [groups]);
 
   useEffect(() => {
@@ -73,10 +73,10 @@ export function ProgramManagementPanel({
   return (
     <section className="panel stack">
       <div className="row">
-        <h2>Week assignments</h2>
+        <h2>Deep Roots week assignments</h2>
         <div className="row">
           <Link className="button" href="/admin/programs/import">
-            Import new week
+            Import weekly mission
           </Link>
           <Link className="button secondary" href="/admin/programs/audit">
             Audit log
@@ -124,7 +124,7 @@ export function ProgramManagementPanel({
                         ))}
                       </ul>
                     ) : (
-                      <p className="muted">No active weeks assigned.</p>
+                      <p className="muted">No active Deep Roots weeks assigned.</p>
                     )}
                   </div>
                 </details>

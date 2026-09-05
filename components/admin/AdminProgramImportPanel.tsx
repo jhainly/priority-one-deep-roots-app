@@ -6,7 +6,7 @@ export function AdminProgramImportPanel() {
     <div className="stack">
       <section className="panel stack">
         <div className="row">
-          <h1>Import program week</h1>
+          <h1>Import weekly mission</h1>
           <Link className="button secondary" href="/admin/programs">
             Back
           </Link>

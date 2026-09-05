@@ -30,7 +30,7 @@ export function Leaderboard() {
   const [activeProgramTitle, setActiveProgramTitle] = useState("");
   const [activeWeekNumber, setActiveWeekNumber] = useState<number | null>(null);
   const [weekOptions, setWeekOptions] = useState<WeekOption[]>([]);
-  const [status, setStatus] = useState("Loading group...");
+  const [status, setStatus] = useState("Loading team...");
 
   useEffect(() => {
     let cancelled = false;
@@ -52,7 +52,7 @@ export function Leaderboard() {
       if (selectedGroup) {
         setSelectedGroupId(selectedGroup.groupId);
       } else {
-        setStatus("Join a group to see scores.");
+        setStatus("Join a team to see Deep Roots scores.");
       }
     });
 
@@ -76,7 +76,7 @@ export function Leaderboard() {
     setActiveProgramTitle("");
     setActiveWeekNumber(null);
     setWeekOptions([]);
-    setStatus("Loading weeks...");
+    setStatus("Loading mission weeks...");
 
     void loadActiveProgramForGroup(activeGroup.groupId).then((programResult) => {
       if (cancelled) {
@@ -90,7 +90,7 @@ export function Leaderboard() {
         setWeekOptions([]);
         setIndividualRows([]);
         setTeamRows([]);
-        setStatus("Your leader has not published content for this group yet.");
+        setStatus("Your leader has not published a Deep Roots mission for this team yet.");
         return;
       }
 
@@ -165,10 +165,10 @@ export function Leaderboard() {
 
   return (
     <section className="panel stack">
-      <h1>Leaderboard</h1>
+      <h1>Deep Roots Leaderboard</h1>
       {groups.length > 1 ? (
         <label className="field compact-field">
-          <span>Group</span>
+          <span>Team</span>
           <select value={activeGroup?.groupId ?? ""} onChange={(event) => changeGroup(event.target.value)}>
             {groups.map((group) => (
               <option key={group.groupId} value={group.groupId}>
@@ -232,7 +232,7 @@ export function Leaderboard() {
       {!activeGroup ? (
         <div className="row">
           <Link className="button" href="/join">
-            Join group
+            Join team
           </Link>
         </div>
       ) : null}
@@ -240,7 +240,7 @@ export function Leaderboard() {
       {activeGroup && !status ? (
         <div className="grid two leaderboard-grid">
           <LeaderboardList
-            emptyMessage="No individual scores yet."
+            emptyMessage="No team member scores yet."
             rows={getSortedRows(individualRows, view)}
             title="Team Leaderboard"
             view={view}

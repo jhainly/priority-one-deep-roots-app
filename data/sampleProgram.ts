@@ -149,13 +149,14 @@ export const sampleProgram: Program = {
     id: "priority-one-deep-roots-week-5",
     title: "Deep Roots",
     version: "1.0.0",
-    description: "Week Five Mission from the Deep Roots weekly missions format."
+    description: "Week Five Mission for the 8-week Deep Roots program."
   },
   weeks: [
     {
       weekNumber: 5,
       title: "Week Five Mission",
-      summary: "Complete by Friday at midnight.",
+      summary: "Complete the Week Five Mission by Friday at midnight.",
+      sourcePdfUrl: "/program-pdfs/deep-roots-week-5.pdf",
       days: [makeMissionScorecardDay(), ...reflectionDays.map(makeReflectionDay)]
     }
   ]
@@ -191,7 +192,7 @@ function makeReflectionDay(day: ReflectionDay): ProgramDay {
       {
         id: "growth-challenge",
         title: "Growth & Challenge",
-        body: "Write your answer to the daily reflection question.",
+        body: "Answer the daily book question.",
         points: 1,
         prompts: [{ id: `${day.label.toLowerCase()}-growth`, label: day.growthQuestion }]
       },

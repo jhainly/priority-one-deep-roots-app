@@ -11,11 +11,11 @@ export default async function HomePage() {
 
   return (
     <section className="panel stack">
-      <p className="eyebrow">8-week team training</p>
+      <p className="eyebrow">Priority One 8-week mission</p>
       <h1>Priority One Deep Roots</h1>
       <p>
-        A focused place for Deep Roots teams to build spiritual, relational, and physical foundations through daily
-        assignments, private reflection, accountability, and healthy competition.
+        Deep Roots helps men build spiritual, relational, and physical habits through weekly missions, daily reading
+        and reflection, team accountability, and steady action.
       </p>
       <div className="row">
         <Link className="button" href="/auth">Sign in</Link>

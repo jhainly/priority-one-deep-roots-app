@@ -14,10 +14,10 @@ export function AdminProgramAuditPanel() {
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [entries, setEntries] = useState<ProgramAuditEntry[]>([]);
   const [status, setStatus] = useState("Loading audit log...");
-  const [groupsStatus, setGroupsStatus] = useState("Loading groups...");
+  const [groupsStatus, setGroupsStatus] = useState("Loading teams...");
 
   const loadGroups = useCallback(async () => {
-    setGroupsStatus("Loading groups...");
+    setGroupsStatus("Loading teams...");
     const result = await listAdminGroups();
 
     if (!result.ok) {
@@ -26,7 +26,7 @@ export function AdminProgramAuditPanel() {
     }
 
     setGroups(result.data);
-    setGroupsStatus(result.data.length > 0 ? "" : "No groups have been created yet.");
+    setGroupsStatus(result.data.length > 0 ? "" : "No teams have been created yet.");
   }, []);
 
   const refreshAudit = useCallback(async (groupIds = selectedGroupIds) => {
@@ -40,7 +40,7 @@ export function AdminProgramAuditPanel() {
     }
 
     setEntries(result.data);
-    setStatus(result.data.length > 0 ? "" : "No program changes have been recorded yet.");
+    setStatus(result.data.length > 0 ? "" : "No Deep Roots mission changes have been recorded yet.");
   }, [selectedGroupIds]);
 
   useEffect(() => {
@@ -78,7 +78,7 @@ export function AdminProgramAuditPanel() {
 
       <section className="panel stack">
         <div className="row">
-          <h2>Filter by group</h2>
+          <h2>Filter by team</h2>
           <button className="button secondary" onClick={clearFilters} type="button">
             Show all
           </button>

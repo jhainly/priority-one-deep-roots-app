@@ -375,7 +375,7 @@ export async function updateGroupSettings(input: {
   const normalizedJoinCode = input.joinCode?.trim();
 
   if (!normalizedName) {
-    return { ok: false, error: "Group name is required." };
+    return { ok: false, error: "Team name is required." };
   }
 
   try {
@@ -399,7 +399,7 @@ export async function updateGroupSettings(input: {
       updateInput.joinCodeHash = await hashJoinCode(normalizedJoinCode);
     }
 
-    await requireSaved(client.models.Group.update(updateInput), "The group could not be updated.");
+    await requireSaved(client.models.Group.update(updateInput), "The team could not be updated.");
 
     return { ok: true, data: undefined };
   } catch (error) {
@@ -416,11 +416,11 @@ export async function joinGroupByCode(groupCode: string): Promise<ServiceResult<
       client.mutations.joinGroupByCode({
         groupCode: groupCode.trim()
       }),
-      "The group code could not be verified."
+      "The team code could not be verified."
     );
 
     if (!result.data?.groupId) {
-      return { ok: false, error: "No group matched that code." };
+      return { ok: false, error: "No team matched that code." };
     }
 
     return { ok: true, data: result.data.groupId };
@@ -495,7 +495,7 @@ export async function leaveCurrentUserGroup(groupId: string): Promise<ServiceRes
           client.models.GroupMembership.delete({
             membershipId: membership.membershipId
           }),
-          "The group membership could not be removed."
+          "The team membership could not be removed."
         )
       )
     );
@@ -568,7 +568,7 @@ export async function getAdminGroupDetail(groupId: string): Promise<ServiceResul
     const group = await client.models.Group.get({ groupId });
 
     if (!group.data) {
-      return { ok: false, error: "Group not found." };
+      return { ok: false, error: "Team not found." };
     }
 
     const memberships = await client.models.GroupMembership.list({
@@ -666,7 +666,7 @@ export async function publishProgramWeeksToGroups(groupIds: string[], preview: P
     const uniqueGroupIds = Array.from(new Set(groupIds.map((groupId) => groupId.trim()).filter(Boolean)));
 
     if (uniqueGroupIds.length === 0) {
-      return { ok: false, error: "Choose at least one group before publishing." };
+      return { ok: false, error: "Choose at least one team before publishing." };
     }
 
     for (const groupId of uniqueGroupIds) {
@@ -681,8 +681,8 @@ export async function publishProgramWeeksToGroups(groupIds: string[], preview: P
     }
 
     const weekLabel = preview.program.weeks.length === 1 ? "week" : "weeks";
-    const groupLabel = uniqueGroupIds.length === 1 ? "group" : "groups";
-    return { ok: true, data: `Published ${preview.program.weeks.length} ${weekLabel} to ${uniqueGroupIds.length} ${groupLabel}.` };
+    const teamLabel = uniqueGroupIds.length === 1 ? "team" : "teams";
+    return { ok: true, data: `Published ${preview.program.weeks.length} ${weekLabel} to ${uniqueGroupIds.length} ${teamLabel}.` };
   } catch (error) {
     return serviceError(error);
   }
@@ -783,7 +783,7 @@ async function publishWeeksForGroup(input: {
       activeProgramId: input.program.program.id,
       updatedAt: input.now
     }),
-    "The group active program could not be updated."
+    "The team active mission could not be updated."
   );
 }
 
@@ -831,7 +831,7 @@ async function createProgramAuditEvent(
       createdAt: input.createdAt,
       details: input.details
     }),
-    "The program audit event could not be saved."
+    "The mission audit event could not be saved."
   );
 }
 
@@ -860,7 +860,7 @@ export async function removeWeekFromGroups(input: {
     let removedCount = 0;
 
     if (uniqueGroupIds.length === 0) {
-      return { ok: false, error: "Choose at least one group." };
+      return { ok: false, error: "Choose at least one team." };
     }
 
     for (const groupId of uniqueGroupIds) {
@@ -889,7 +889,7 @@ export async function removeWeekFromGroups(input: {
             actorDisplayName,
             actorUserId: user.userId,
             createdAt: now,
-            details: "Removed from active group content.",
+            details: "Removed from active team content.",
             groupId,
             groupName: group.data?.name ?? groupId,
             programId: record.programId,
@@ -902,11 +902,11 @@ export async function removeWeekFromGroups(input: {
     }
 
     if (removedCount === 0) {
-      return { ok: false, error: "That week was not active for the selected groups." };
+      return { ok: false, error: "That week was not active for the selected teams." };
     }
 
-    const groupLabel = uniqueGroupIds.length === 1 ? "group" : "groups";
-    return { ok: true, data: `Removed Week ${input.weekNumber} from ${uniqueGroupIds.length} ${groupLabel}.` };
+    const teamLabel = uniqueGroupIds.length === 1 ? "team" : "teams";
+    return { ok: true, data: `Removed Week ${input.weekNumber} from ${uniqueGroupIds.length} ${teamLabel}.` };
   } catch (error) {
     return serviceError(error);
   }
@@ -1376,7 +1376,7 @@ export async function loadActiveProgramForGroup(groupId: string): Promise<Servic
     const group = await client.models.Group.get({ groupId });
 
     if (!group.data) {
-      return { ok: false, error: "Group not found." };
+      return { ok: false, error: "Team not found." };
     }
 
     const activeWeekRecords = await listActiveWeekRecords(client, groupId);
@@ -1399,7 +1399,7 @@ export async function loadActiveProgramForGroup(groupId: string): Promise<Servic
       const parsed = programSchema.safeParse(program);
 
       if (!parsed.success) {
-        return { ok: false, error: "The active program weeks are invalid." };
+        return { ok: false, error: "The active Deep Roots weeks are invalid." };
       }
 
       return {
@@ -1422,19 +1422,19 @@ export async function loadActiveProgramForGroup(groupId: string): Promise<Servic
     const activeProgramId = group.data.activeProgramId;
 
     if (!activeProgramId) {
-      return { ok: false, error: "No active program has been published for this group yet." };
+      return { ok: false, error: "No active Deep Roots mission has been published for this team yet." };
     }
 
     const snapshot = await client.models.ProgramSnapshot.get({ programId: activeProgramId });
 
     if (!snapshot.data) {
-      return { ok: false, error: "The active program snapshot could not be found." };
+      return { ok: false, error: "The active Deep Roots mission snapshot could not be found." };
     }
 
     const parsed = programSchema.safeParse(parseStoredProgramContent(snapshot.data.content));
 
     if (!parsed.success) {
-      return { ok: false, error: "The active program content is invalid." };
+      return { ok: false, error: "The active Deep Roots mission content is invalid." };
     }
 
     return {
@@ -2145,7 +2145,7 @@ async function updateOwnMembershipDisplayNames(
           membershipId: membership.membershipId,
           displayName
         }),
-        "A group membership display name could not be updated."
+        "A team membership display name could not be updated."
       )
     )
   );

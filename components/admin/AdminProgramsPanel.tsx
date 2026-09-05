@@ -10,14 +10,14 @@ import {
 
 export function AdminProgramsPanel() {
   const [groups, setGroups] = useState<AdminGroupSummary[]>([]);
-  const [status, setStatus] = useState("Loading groups...");
+  const [status, setStatus] = useState("Loading teams...");
 
   useEffect(() => {
     void refreshGroups();
   }, []);
 
   async function refreshGroups() {
-    setStatus("Loading groups...");
+    setStatus("Loading teams...");
     const result = await listAdminGroups();
 
     if (!result.ok) {
@@ -26,7 +26,7 @@ export function AdminProgramsPanel() {
     }
 
     setGroups(result.data);
-    setStatus(result.data.length > 0 ? "" : "Create a group before managing programs.");
+    setStatus(result.data.length > 0 ? "" : "Create a team before managing weekly missions.");
   }
 
   return (

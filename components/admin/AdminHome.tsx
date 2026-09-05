@@ -2,16 +2,16 @@ import Link from "next/link";
 
 const adminTools = [
   {
-    description: "Create groups, view existing groups, and open a group to review members and assigned weeks.",
+    description: "Create teams, view existing teams, and open a team to review members and assigned weeks.",
     href: "/admin/groups",
-    label: "Open group management",
-    title: "Group management"
+    label: "Open team management",
+    title: "Team management"
   },
   {
-    description: "Import weeks, publish them to one or more groups, remove active weeks, and review program changes.",
+    description: "Import weekly missions, publish them to one or more teams, remove active weeks, and review mission changes.",
     href: "/admin/programs",
-    label: "Open program management",
-    title: "Program management"
+    label: "Open mission management",
+    title: "Mission management"
   },
   {
     description: "View current users and choose who has admin access.",
@@ -27,8 +27,8 @@ export function AdminHome() {
       <section className="panel stack">
         <div>
           <p className="eyebrow">Admin tools</p>
-          <h1>Administration</h1>
-          <p>Choose the area you need to manage.</p>
+          <h1>Deep Roots administration</h1>
+          <p>Manage Priority One teams, weekly missions, and app access.</p>
         </div>
       </section>
 

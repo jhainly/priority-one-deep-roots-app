@@ -24,14 +24,14 @@ export function Dashboard({ initialWeekNumber }: DashboardProps) {
   const [scores, setScores] = useState<ScoreSummary>(() => getEmptyScores(null, initialWeekNumber ?? 1));
   const [groups, setGroups] = useState<UserGroupSummary[]>([]);
   const [activeGroup, setActiveGroup] = useState<UserGroupSummary | null>(null);
-  const [groupStatus, setGroupStatus] = useState("Loading group...");
-  const [programStatus, setProgramStatus] = useState("Loading program...");
+  const [groupStatus, setGroupStatus] = useState("Loading team...");
+  const [programStatus, setProgramStatus] = useState("Loading weekly mission...");
   const [status, setStatus] = useState("Loading scores...");
 
   useEffect(() => {
     let cancelled = false;
 
-    setGroupStatus("Loading group...");
+    setGroupStatus("Loading team...");
 
     void listCurrentUserGroups().then((result) => {
       if (cancelled) {
@@ -52,7 +52,7 @@ export function Dashboard({ initialWeekNumber }: DashboardProps) {
         setSelectedGroupId(selectedGroup.groupId);
         setGroupStatus("");
       } else {
-        setGroupStatus("You need a group code from your leader before your dashboard can show program content.");
+        setGroupStatus("You need a team code from your leader before your Deep Roots mission can begin.");
         setStatus("");
       }
     });
@@ -74,7 +74,7 @@ export function Dashboard({ initialWeekNumber }: DashboardProps) {
     }
 
     setProgram(null);
-    setProgramStatus("Loading program...");
+    setProgramStatus("Loading weekly mission...");
     setStatus("");
 
     void loadActiveProgramForGroup(activeGroup.groupId).then((result) => {
@@ -84,7 +84,7 @@ export function Dashboard({ initialWeekNumber }: DashboardProps) {
 
       if (!result.ok) {
         setScores(getEmptyScores(null, initialWeekNumber ?? 1));
-        setProgramStatus("Your leader has not published content for this group yet.");
+        setProgramStatus("Your leader has not published a Deep Roots mission for this team yet.");
         return;
       }
 
@@ -160,13 +160,13 @@ export function Dashboard({ initialWeekNumber }: DashboardProps) {
     <div className="stack">
       <section className="panel stack">
         <div>
-          <h1>{activeGroup?.name ?? "Join a group"}</h1>
+          <h1>{activeGroup?.name ?? "Join your team"}</h1>
           {program ? <p className="muted">{program.program.title}{program.program.description ? `: ${program.program.description}` : ""}</p> : null}
-          {activeGroup && !program ? <p className="muted">Your leader hasn&apos;t published content for this group yet.</p> : null}
+          {activeGroup && !program ? <p className="muted">Your leader hasn&apos;t published a weekly mission for this team yet.</p> : null}
         </div>
         {groups.length > 1 ? (
           <label className="field compact-field">
-            <span>Group</span>
+            <span>Team</span>
             <select value={activeGroup?.groupId ?? ""} onChange={(event) => changeGroup(event.target.value)}>
               {groups.map((group) => (
                 <option key={group.groupId} value={group.groupId}>
@@ -179,12 +179,12 @@ export function Dashboard({ initialWeekNumber }: DashboardProps) {
         {program ? (
           <div className="stack">
             <ScoreBar
-              label="Weekly score"
+              label="Week score"
               earned={scores.weeklyScore}
               max={scores.maxWeeklyScore}
             />
             <ScoreBar
-              label="Lifetime score"
+              label="Deep Roots total"
               earned={scores.cumulativeScore}
               max={scores.maxCumulativeScore}
             />
@@ -193,7 +193,7 @@ export function Dashboard({ initialWeekNumber }: DashboardProps) {
         {!activeGroup ? (
           <div className="row">
             <Link className="button" href="/join">
-              Join group
+              Join team
             </Link>
           </div>
         ) : null}
@@ -206,8 +206,6 @@ export function Dashboard({ initialWeekNumber }: DashboardProps) {
           action={
             activeGroup ? (
               <JournalExportButton
-                groupId={activeGroup.groupId}
-                groupName={activeGroup.name}
                 program={program}
                 weekNumber={selectedWeekNumber}
               />

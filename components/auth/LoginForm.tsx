@@ -40,7 +40,7 @@ export function LoginForm() {
     } catch (caught) {
       if (isUnconfirmedUserError(caught)) {
         setMode("confirm");
-        setNotice("Enter the verification code sent to your email, or resend a new code.");
+        setNotice("Enter the verification code sent to your email, or request a new code.");
         return;
       }
 
@@ -73,7 +73,7 @@ export function LoginForm() {
     if (!result.isSignedIn) {
       if (result.nextStep.signInStep === "CONFIRM_SIGN_UP") {
         setMode("confirm");
-        setNotice("Enter the verification code sent to your email, or resend a new code.");
+        setNotice("Enter the verification code sent to your email, or request a new code.");
         return;
       }
 
@@ -113,8 +113,8 @@ export function LoginForm() {
   return (
     <form className="panel stack" onSubmit={handleSubmit} suppressHydrationWarning>
       <div>
-        <h1>{mode === "confirm" ? "Verify account" : "Sign in"}</h1>
-        {accountConfirmed ? <p className="muted">Your account is verified. Sign in to continue.</p> : null}
+        <h1>{mode === "confirm" ? "Verify your account" : "Sign in to Deep Roots"}</h1>
+        {accountConfirmed ? <p className="muted">Your account is verified. Sign in to join your team.</p> : null}
         {passwordReset ? <p className="muted">Your password has been reset. Sign in with your new password.</p> : null}
         {mode === "confirm" ? <p className="muted">Enter the code sent to your email to finish account setup.</p> : null}
       </div>
@@ -165,7 +165,7 @@ export function LoginForm() {
         Forgot password?
       </Link>
       <p className="muted">
-        Need an account? <Link href="/create-account">Create one</Link>.
+        New to Deep Roots? <Link href="/create-account">Create an account</Link>.
       </p>
     </form>
   );

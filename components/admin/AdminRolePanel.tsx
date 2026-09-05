@@ -27,7 +27,7 @@ export function AdminRolePanel() {
     }
 
     setUsers(result.data);
-    setStatus(result.data.length > 0 ? "" : "No users found.");
+    setStatus(result.data.length > 0 ? "" : "No Deep Roots users found.");
   }
 
   async function toggleAdmin(user: AdminRoleUser, isAdmin: boolean) {
@@ -47,7 +47,7 @@ export function AdminRolePanel() {
 
   return (
     <section className="panel stack">
-      <h2>Users</h2>
+      <h2>Deep Roots users</h2>
       {message ? <p className="muted">{message}</p> : null}
 
       {users.length > 0 ? (
@@ -58,7 +58,7 @@ export function AdminRolePanel() {
                 <strong>{user.displayName}</strong>
                 <p className="muted">
                   {user.email || user.username}
-                  {!user.enabled ? " · disabled" : user.status !== "CONFIRMED" ? ` · ${user.status.toLowerCase()}` : ""}
+                  {!user.enabled ? " - disabled" : user.status !== "CONFIRMED" ? ` - ${user.status.toLowerCase()}` : ""}
                 </p>
               </div>
               <label className="checkbox-row">

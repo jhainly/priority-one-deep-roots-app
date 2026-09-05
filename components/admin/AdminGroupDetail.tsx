@@ -17,7 +17,7 @@ type AdminGroupDetailProps = {
 
 export function AdminGroupDetail({ groupId }: AdminGroupDetailProps) {
   const [group, setGroup] = useState<AdminGroupDetailData | null>(null);
-  const [status, setStatus] = useState("Loading group...");
+  const [status, setStatus] = useState("Loading team...");
   const [activeWeeks, setActiveWeeks] = useState<ActiveProgramWeekSummary[]>([]);
   const [weeksStatus, setWeeksStatus] = useState("Loading active weeks...");
   const [name, setName] = useState("");
@@ -62,7 +62,7 @@ export function AdminGroupDetail({ groupId }: AdminGroupDetailProps) {
     }
 
     setActiveWeeks(result.data);
-    setWeeksStatus(result.data.length > 0 ? "" : "No active weeks have been published for this group.");
+    setWeeksStatus(result.data.length > 0 ? "" : "No active Deep Roots weeks have been published for this team.");
   }, [groupId]);
 
   useEffect(() => {
@@ -73,7 +73,7 @@ export function AdminGroupDetail({ groupId }: AdminGroupDetailProps) {
     return (
       <section className="panel stack">
         <Link className="button secondary" href="/admin/groups">
-          Back to groups
+          Back to teams
         </Link>
         <p className="muted">{status}</p>
       </section>
@@ -113,7 +113,7 @@ export function AdminGroupDetail({ groupId }: AdminGroupDetailProps) {
       return;
     }
 
-    setSettingsMessage("Group updated.");
+    setSettingsMessage("Team updated.");
     await refreshGroup();
   }
 
@@ -154,7 +154,7 @@ export function AdminGroupDetail({ groupId }: AdminGroupDetailProps) {
         <div className="row">
           <div>
             <h1>{group.name}</h1>
-            <p className="muted">{group.memberCount} {group.memberCount === 1 ? "member" : "members"} · {group.leaderCount} {group.leaderCount === 1 ? "leader" : "leaders"}</p>
+            <p className="muted">{group.memberCount} {group.memberCount === 1 ? "member" : "members"} - {group.leaderCount} {group.leaderCount === 1 ? "leader" : "leaders"}</p>
           </div>
           <Link className="button secondary" href="/admin/groups">
             Back
@@ -163,7 +163,7 @@ export function AdminGroupDetail({ groupId }: AdminGroupDetailProps) {
         <form className="stack" onSubmit={saveSettings}>
           <div className="grid two">
             <label className="field">
-              <span>Group name</span>
+              <span>Team name</span>
               <input value={name} onChange={(event) => setName(event.target.value)} required />
             </label>
             <label className="field">
@@ -182,7 +182,7 @@ export function AdminGroupDetail({ groupId }: AdminGroupDetailProps) {
 
       <section className="panel stack">
         <div className="row">
-          <h2>Active weeks</h2>
+          <h2>Active Deep Roots weeks</h2>
           <button className="button secondary" onClick={() => void refreshWeeks()} type="button">
             Refresh
           </button>

@@ -55,8 +55,8 @@ export function CreateAccountForm() {
   return (
     <form className="panel stack" onSubmit={handleSubmit} suppressHydrationWarning>
       <div>
-        <h1>{needsConfirmation ? "Verify account" : "Create account"}</h1>
-        {needsConfirmation ? <p className="muted">Enter the code sent to your email.</p> : null}
+        <h1>{needsConfirmation ? "Verify your account" : "Create your Deep Roots account"}</h1>
+        {needsConfirmation ? <p className="muted">Enter the verification code sent to your email.</p> : null}
       </div>
       <label className="field">
         <span>Email</span>

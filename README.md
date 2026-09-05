@@ -201,7 +201,7 @@ Additional rules:
 
 - Do not send plaintext answers to APIs, logs, analytics, or DynamoDB.
 - Do not expose another member's encrypted answers to leaders or admins.
-- PDF export decrypts locally in the browser and exports the selected week only.
+- Week PDF export downloads the original Deep Roots handout stored with the app.
 
 ## Program YAML
 
@@ -210,6 +210,14 @@ Program content is structured as:
 ```text
 program -> weeks -> days -> sections -> prompts/scripture
 ```
+
+Each week can point to its original handout PDF:
+
+```yaml
+sourcePdfUrl: /program-pdfs/deep-roots-week-1.pdf
+```
+
+Store source PDFs in `public/program-pdfs/` using the convention `deep-roots-week-{weekNumber}.pdf`. The export button uses `sourcePdfUrl` when present and falls back to that naming convention for already-published weeks.
 
 Each section has a point value. Sections can optionally define partial completion fields:
 

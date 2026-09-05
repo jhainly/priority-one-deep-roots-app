@@ -8,7 +8,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Priority One Deep Roots",
-  description: "Team-based discipleship, challenge, and reflection for Priority One Deep Roots",
+  description: "An 8-week Priority One mission for spiritual, relational, and physical growth.",
   icons: {
     icon: "/logo.png"
   }

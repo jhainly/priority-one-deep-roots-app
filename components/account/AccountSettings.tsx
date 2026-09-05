@@ -19,7 +19,7 @@ export function AccountSettings() {
   const [groups, setGroups] = useState<UserGroupSummary[]>([]);
   const [profileStatus, setProfileStatus] = useState("Loading account...");
   const [passwordStatus, setPasswordStatus] = useState("");
-  const [groupStatus, setGroupStatus] = useState("Loading groups...");
+  const [groupStatus, setGroupStatus] = useState("Loading teams...");
   const [isSavingName, setIsSavingName] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [leavingGroupId, setLeavingGroupId] = useState("");
@@ -43,7 +43,7 @@ export function AccountSettings() {
         setGroupStatus(groupsResult.error);
       } else {
         setGroups(groupsResult.data);
-        setGroupStatus(groupsResult.data.length > 0 ? "" : "You are not currently in a group.");
+        setGroupStatus(groupsResult.data.length > 0 ? "" : "You are not currently on a team.");
       }
     });
 
@@ -105,11 +105,11 @@ export function AccountSettings() {
     }
 
     setGroups(result.data);
-    setGroupStatus(result.data.length > 0 ? "" : "You are not currently in a group.");
+    setGroupStatus(result.data.length > 0 ? "" : "You are not currently on a team.");
   }
 
   async function leaveGroup(group: UserGroupSummary) {
-    if (!window.confirm(`Leave ${group.name}? You will need a group code to join again.`)) {
+    if (!window.confirm(`Leave ${group.name}? You will need a team code to join again.`)) {
       return;
     }
 
@@ -146,15 +146,15 @@ export function AccountSettings() {
         <div>
           <p className="eyebrow">Account</p>
           <h1>Account settings</h1>
-          <p>Manage the name your group sees and keep your account password current.</p>
+          <p>Manage the name your team sees and keep your Deep Roots account current.</p>
         </div>
       </section>
 
       <form className="panel stack" onSubmit={saveDisplayName}>
         <div>
           <p className="eyebrow">Display name</p>
-          <h2>Group identity</h2>
-          <p>This name appears in group membership, leaderboard, and leader views.</p>
+          <h2>Team identity</h2>
+          <p>This name appears in team membership, leaderboards, and leader views.</p>
         </div>
         <label className="field">
           <span>Display name</span>
@@ -168,9 +168,9 @@ export function AccountSettings() {
 
       <section className="panel stack">
         <div>
-          <p className="eyebrow">Groups</p>
-          <h2>Group membership</h2>
-          <p>Leave a group if you no longer want it connected to this account.</p>
+          <p className="eyebrow">Teams</p>
+          <h2>Team membership</h2>
+          <p>Leave a team if you no longer want it connected to this account.</p>
         </div>
         {groups.length > 0 ? (
           <ul className="list">
@@ -186,7 +186,7 @@ export function AccountSettings() {
                   onClick={() => void leaveGroup(group)}
                   type="button"
                 >
-                  {leavingGroupId === group.groupId ? "Leaving..." : "Leave group"}
+                  {leavingGroupId === group.groupId ? "Leaving..." : "Leave team"}
                 </button>
               </li>
             ))}

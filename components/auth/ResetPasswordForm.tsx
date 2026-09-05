@@ -77,7 +77,7 @@ export function ResetPasswordForm() {
         <h1>Reset password</h1>
         <p className="muted">
           {step === "request"
-            ? "Enter your email and we will send you a password reset code."
+            ? "Enter your email and we will send you a Deep Roots password reset code."
             : "Enter the code from your email and choose a new password."}
         </p>
       </div>
