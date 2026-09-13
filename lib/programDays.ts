@@ -1,6 +1,6 @@
 const weekDayLabels = ["Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "Monday", "Tuesday"] as const;
 
-export function getProgramDayLabel(dayNumber: number, label?: string): string {
+function getProgramDayLabel(dayNumber: number, label?: string): string {
   if (label) {
     return label;
   }

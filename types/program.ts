@@ -57,7 +57,6 @@ export type ScriptureBlock = {
 export type ProgramPrompt = {
   id: string;
   label: string;
-  optional?: boolean;
 };
 
 export type ProgramImportPreview = {

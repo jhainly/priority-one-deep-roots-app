@@ -16,8 +16,6 @@ import { journalPromptAnswerKey, journalPromptStorageIds, journalSectionReflecti
 import { hashProgram, programSchema } from "@/lib/programValidation";
 import { calculateScores, sectionKey, type CompletedSectionKey, type ScoreSummary } from "@/lib/scoring";
 import type { Schema } from "@/amplify/data/resource";
-import type { JournalExportInput } from "@/lib/pdfExport";
-import type { SectionProgress } from "@/types/domain";
 import type { Program, ProgramDay, ProgramImportPreview, ProgramSection, ProgramWeek } from "@/types/program";
 
 type DataClient = ReturnType<typeof generateClient<Schema>>;
@@ -655,11 +653,6 @@ export async function setUserAdminRole(input: {
   }
 }
 
-export async function publishProgram(groupId: string, preview: ProgramImportPreview): Promise<ServiceResult<string>> {
-  const result = await publishProgramWeeksToGroups([groupId], preview);
-  return result.ok ? { ok: true, data: result.data } : result;
-}
-
 export async function publishProgramWeeksToGroups(
   groupIds: string[],
   preview: ProgramImportPreview,
@@ -858,83 +851,6 @@ async function createProgramAuditEvent(
     }),
     "The mission audit event could not be saved."
   );
-}
-
-export async function removeWeekFromActiveProgram(input: {
-  groupId: string;
-  weekNumber: number;
-}): Promise<ServiceResult<string>> {
-  const result = await removeWeekFromGroups({
-    groupIds: [input.groupId],
-    weekNumber: input.weekNumber
-  });
-  return result.ok ? { ok: true, data: result.data } : result;
-}
-
-export async function removeWeekFromGroups(input: {
-  groupIds: string[];
-  weekNumber: number;
-}): Promise<ServiceResult<string>> {
-  try {
-    await configureAmplify();
-    const client = getDataClient();
-    const user = await getCurrentUser();
-    const actorDisplayName = await getDisplayName(user.userId);
-    const now = new Date().toISOString();
-    const uniqueGroupIds = Array.from(new Set(input.groupIds.map((groupId) => groupId.trim()).filter(Boolean)));
-    let removedCount = 0;
-
-    if (uniqueGroupIds.length === 0) {
-      return { ok: false, error: "Choose at least one team." };
-    }
-
-    for (const groupId of uniqueGroupIds) {
-      const [activeWeeks, group] = await Promise.all([
-        listActiveWeekRecords(client, groupId),
-        client.models.Group.get({ groupId })
-      ]);
-      const matchingWeeks = activeWeeks.filter((record) => record.weekNumber === input.weekNumber);
-
-      await Promise.all(
-        matchingWeeks.map((record) =>
-          requireSaved(
-            client.models.GroupProgramWeek.update({
-              weekSnapshotId: record.weekSnapshotId,
-              isActive: false,
-              updatedAt: now
-            }),
-            "The active week could not be removed."
-          )
-        )
-      );
-      await Promise.all(
-        matchingWeeks.map((record) =>
-          createProgramAuditEvent(client, {
-            action: "remove_week",
-            actorDisplayName,
-            actorUserId: user.userId,
-            createdAt: now,
-            details: "Removed from active team content.",
-            groupId,
-            groupName: group.data?.name ?? groupId,
-            programId: record.programId,
-            weekNumber: record.weekNumber,
-            weekTitle: record.title
-          })
-        )
-      );
-      removedCount += matchingWeeks.length;
-    }
-
-    if (removedCount === 0) {
-      return { ok: false, error: "That week was not active for the selected teams." };
-    }
-
-    const teamLabel = uniqueGroupIds.length === 1 ? "team" : "teams";
-    return { ok: true, data: `Removed Week ${input.weekNumber} from ${uniqueGroupIds.length} ${teamLabel}.` };
-  } catch (error) {
-    return serviceError(error);
-  }
 }
 
 export async function listActiveProgramWeeksForGroups(groupIds: string[]): Promise<ServiceResult<ActiveProgramWeekSummary[]>> {
@@ -1580,134 +1496,6 @@ function parseStoredProgramWeekContent(content: unknown): ProgramWeek | null {
   });
 
   return program.success ? program.data.weeks[0] : null;
-}
-
-export async function loadJournalExport(input: {
-  groupId: string;
-  groupName?: string;
-  program: Program;
-  weekNumber?: number;
-}): Promise<ServiceResult<JournalExportInput>> {
-  try {
-    await configureAmplify();
-    const client = getDataClient();
-    const user = await getCurrentUser();
-    const [progress, encryptedAnswers] = await Promise.all([
-      client.models.SectionProgress.list({
-        filter: {
-          userId: {
-            eq: user.userId
-          },
-          groupId: {
-            eq: input.groupId
-          },
-          programId: {
-            eq: input.program.program.id
-          },
-          ...(input.weekNumber
-            ? {
-                weekNumber: {
-                  eq: input.weekNumber
-                }
-              }
-            : {})
-        }
-      }),
-      client.models.EncryptedAnswer.list({
-        filter: {
-          userId: {
-            eq: user.userId
-          },
-          groupId: {
-            eq: input.groupId
-          },
-          programId: {
-            eq: input.program.program.id
-          },
-          ...(input.weekNumber
-            ? {
-                weekNumber: {
-                  eq: input.weekNumber
-                }
-              }
-            : {})
-        }
-      })
-    ]);
-    const secret = getJournalEncryptionSecret();
-
-    if (encryptedAnswers.data.length > 0 && !secret) {
-      return { ok: false, error: "Sign in again before exporting saved reflections." };
-    }
-
-    const decryptedAnswers: Record<string, string> = {};
-
-    if (secret) {
-      for (const answer of encryptedAnswers.data) {
-        decryptedAnswers[journalPromptAnswerKey(answer.sectionId, answer.promptId)] = await decryptJournalAnswer(
-          {
-            algorithm: "AES-GCM",
-            ciphertext: answer.ciphertext,
-            iterations: answer.iterations,
-            iv: answer.iv,
-            keyDerivation: "PBKDF2-SHA-256",
-            salt: answer.salt,
-            version: 1
-          } satisfies EncryptedPayload,
-          secret
-        );
-      }
-    }
-
-    const progressRows: SectionProgress[] = progress.data.map((row) => ({
-      completed: row.completed,
-      dayNumber: row.dayNumber,
-      groupId: row.groupId,
-      pointsEarned: row.pointsEarned,
-      programId: row.programId,
-      sectionId: row.sectionId,
-      updatedAt: row.updatedAt,
-      userId: row.userId,
-      weekNumber: row.weekNumber
-    }));
-    const sectionProgressPoints = new Map<CompletedSectionKey, number>(
-      progressRows.map((row) => [
-        sectionKey(row.weekNumber, row.dayNumber, row.sectionId),
-        row.pointsEarned
-      ])
-    );
-    const weeklyTotals = Object.fromEntries(
-      input.program.weeks.map((week) => {
-        const score = calculateScores(input.program, week.weekNumber, sectionProgressPoints);
-        return [
-          week.weekNumber,
-          {
-            maxScore: score.maxWeeklyScore,
-            score: score.weeklyScore
-          }
-        ];
-      })
-    );
-    const cumulative = calculateScores(input.program, input.program.weeks[0]?.weekNumber ?? 1, sectionProgressPoints);
-
-    return {
-      ok: true,
-      data: {
-        cumulativeScore: cumulative.cumulativeScore,
-        decryptedAnswers,
-        displayName: await getDisplayName(user.userId),
-        exportedAt: new Date().toISOString(),
-        groupName: input.groupName,
-        maxCumulativeScore: cumulative.maxCumulativeScore,
-        program: input.program,
-        progress: progressRows,
-        weekNumber: input.weekNumber,
-        weeklyTotals
-      }
-    };
-  } catch (error) {
-    return serviceError(error);
-  }
 }
 
 export async function loadJournalDay(input: {

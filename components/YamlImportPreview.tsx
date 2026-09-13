@@ -14,26 +14,19 @@ import {
   type AdminGroupSummary,
   type WeekReplacementImpact
 } from "@/lib/services/dataClient";
-import type { ProgramDay, ProgramImportPreview, ProgramSection, ProgramWeek } from "@/types/program";
+import type { ProgramImportPreview, ProgramSection, ProgramWeek } from "@/types/program";
 
-const exampleYaml = yaml.dump(
-  {
-    program: sampleProgram.program,
-    weeks: [sampleProgram.weeks[0]]
-  },
-  {
-    lineWidth: 100,
-    noRefs: true
-  }
-);
+const exampleYaml = yaml.dump(sampleProgram, {
+  lineWidth: 100,
+  noRefs: true
+});
 
 type YamlImportPreviewProps = {
-  embedded?: boolean;
   groups?: AdminGroupSummary[];
   onPublished?: () => void;
 };
 
-export function YamlImportPreview({ embedded = false, groups: providedGroups, onPublished }: YamlImportPreviewProps = {}) {
+export function YamlImportPreview({ groups: providedGroups, onPublished }: YamlImportPreviewProps = {}) {
   const [source, setSource] = useState(exampleYaml);
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [groups, setGroups] = useState<AdminGroupSummary[]>(providedGroups ?? []);

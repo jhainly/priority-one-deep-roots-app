@@ -173,32 +173,6 @@ button {
   padding-top: 28px;
 }
 
-.admin-workflow-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.admin-workflow-nav a {
-  background: var(--surface-strong);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  color: var(--accent-strong);
-  font-weight: 700;
-  min-height: 40px;
-  padding: 10px 12px;
-}
-
-.admin-tool-grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
-}
-
-.admin-tool-grid .card {
-  align-content: space-between;
-}
-
 .admin-tabs {
   display: flex;
   gap: 4px;
@@ -254,10 +228,6 @@ button {
 
 .grid.two {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
-}
-
-.grid.three {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
 }
 
 .import-preview-grid {
@@ -390,24 +360,6 @@ li {
 
 .compact-field {
   min-width: min(100%, 280px);
-}
-
-.metric {
-  background: var(--surface-strong);
-  border-radius: 8px;
-  padding: 14px;
-}
-
-.metric strong {
-  display: block;
-  font-size: 1.35rem;
-}
-
-.metric small {
-  color: var(--muted);
-  display: block;
-  line-height: 1.4;
-  margin-top: 6px;
 }
 
 .list {

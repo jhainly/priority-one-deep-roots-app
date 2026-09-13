@@ -155,11 +155,11 @@ app/                         Next.js App Router routes
   admin/programs/audit/      Program import/replacement/removal audit log
   admin/users/               Admin role management
 components/                  Shared UI and feature components
-data/                        Sample Deep Roots Week 5 program content
-docs/                        Architecture and UAT notes
-lib/                         Amplify, validation, encryption, scoring, PDF, and service utilities
-schemas/                     Example YAML program schema
-types/                       Domain and program TypeScript types
+data/                        Starter YAML template shown on the admin import page
+docs/                        YAML reference, architecture, and UAT notes
+imports/                     Deep Roots weekly mission YAML files ready to import
+lib/                         Amplify, validation, encryption, scoring, and service utilities
+types/                       Program TypeScript types
 amplify/                     Amplify Gen 2 auth, data, and function backend
   functions/                 AppSync resolver Lambdas
 public/                      Static assets, including logo.png
@@ -232,9 +232,9 @@ pointsPerCompletion: 1
 points: 3
 ```
 
-Admins paste YAML into `/admin/programs/import`, validate and preview it, then publish one or more weeks to selected teams. If an imported week number is already active for a selected team, the import flow warns before replacing it.
+Admins paste YAML into `/admin/programs/import`, validate and preview it, then import one or more weeks to selected teams. If an imported week number already exists for a selected team, the import flow warns before replacing it.
 
-See `schemas/program.schema.yaml` for the current example.
+The import page is pre-filled with a starter template from `data/sampleProgram.ts`. Ready-to-import weekly content lives in `imports/deep-roots-week-{weekNumber}.yaml`.
 
 ## Public Repo Hygiene
 
