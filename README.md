@@ -14,11 +14,12 @@ Built with Next.js, TypeScript, AWS Amplify Gen 2, Amazon Cognito, AppSync, and 
   - `Weekly Mission`
   - Weekly `Chapter Challenge`
   - Monday-Friday `Spiritual Action: Reading and Reflection`
-- Repeated mission items support partial scoring with count buttons, such as `0 1 2 3` days completed.
+- Repeated mission items support partial scoring, either as count buttons (`0 1 2 3` days completed) or as named checkboxes (Monday-Friday, Introduction / Chapter 1) when the YAML defines `completionItems`.
 - The top-left brand mark and favicon use `public/logo.png`.
 - The leaderboard has two views:
-  - `Team Leaderboard`: individual members in the selected team.
-  - `Program Leaderboard`: team totals compared across teams in the same active program.
+  - `My Team's Leaderboard`: individual members in the selected team.
+  - `Deep Roots Team Leaderboard`: team totals compared across teams in the same active program.
+- Changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 
 ## Local Setup
 
@@ -107,7 +108,7 @@ Then open the HTTPS URL shown by Next.js.
 - Navigate active weeks and program days.
 - Complete weekly missions, including partial scoring for repeated day-count items.
 - Write private encrypted reflection responses.
-- Export the current week's reflections to PDF after local decryption in the browser.
+- Download the current week's original Deep Roots handout PDF and the Getting Started guide.
 - Update display name and password from the account page.
 - Leave a joined team.
 
@@ -121,15 +122,15 @@ Then open the HTTPS URL shown by Next.js.
 - Import one or more weeks to one or more teams.
 - Choose whether imported weeks are visible to members immediately.
 - Show or hide imported weeks for each team without deleting the imported content.
-- View program assignment status and import/replacement/removal audit events.
+- View program assignment status and import, replacement, and show/hide audit events.
 - Manage Cognito `ADMINS` membership from the admin user panel.
 
 ## Leaderboards
 
 The leaderboard page supports weekly and all-time views.
 
-- `Team Leaderboard` shows individual members in the selected team.
-- `Program Leaderboard` shows cumulative team totals for teams assigned to the same active program title.
+- `My Team's Leaderboard` shows individual members in the selected team.
+- `Deep Roots Team Leaderboard` shows cumulative team totals for teams assigned to the same active program title.
 - Weekly view uses the selected week number.
 - All-time view uses cumulative score rows.
 - Program team scores are normalized as the team's average individual score multiplied by 3. For a 40-point week, the maximum team score is 120.
@@ -148,11 +149,11 @@ app/                         Next.js App Router routes
   dashboard/                 Member dashboard and score summary
   program/week/[...]/        Program day journal screens
   leaderboard/               Team and program leaderboards
-  admin/                     Admin landing page
-  admin/groups/              Admin team list and per-team drilldown
-  admin/programs/            Program assignment and week removal management
-  admin/programs/import/     YAML week import, validation, rendered preview, publish
-  admin/programs/audit/      Program import/replacement/removal audit log
+  admin/                     Redirects to admin/groups
+  admin/groups/              Admin team list and per-team drilldown (imported weeks, show/hide)
+  admin/programs/            Program assignment and week visibility management
+  admin/programs/import/     YAML week import, validation, rendered preview, import to teams
+  admin/programs/audit/      Program import/replacement/show/hide audit log
   admin/users/               Admin role management
 components/                  Shared UI and feature components
 data/                        Starter YAML template shown on the admin import page
@@ -164,6 +165,14 @@ amplify/                     Amplify Gen 2 auth, data, and function backend
   functions/                 AppSync resolver Lambdas
 public/                      Static assets, including logo.png
 ```
+
+## Documentation
+
+- [CHANGELOG.md](CHANGELOG.md): notable changes by date.
+- [docs/deep-roots-yaml-reference.md](docs/deep-roots-yaml-reference.md): YAML conventions, scoring rules, and the import review checklist.
+- [docs/dynamodb-data-model.md](docs/dynamodb-data-model.md): data model notes.
+- [docs/production-email-setup.md](docs/production-email-setup.md): Cognito/SES email sender setup.
+- [docs/uat-program-import-active-content.md](docs/uat-program-import-active-content.md): UAT script for import and active content loading.
 
 ## Backend Functions
 
@@ -247,6 +256,8 @@ Generated and local-only artifacts are ignored:
 - `.env*`
 - local logs, scratch files, and coverage output
 
+Line endings are normalized to LF by `.gitattributes`, so Windows checkouts do not produce CRLF-only diffs.
+
 Before pushing publicly:
 
 ```bash
@@ -256,10 +267,11 @@ npm run lint
 npm run build
 ```
 
-Do not commit `amplify_outputs.json`, local environment files, AWS credentials, or exported production data.
+Do not commit `amplify_outputs.json`, local environment files, AWS credentials, or exported production data. Add a line to `CHANGELOG.md` under today's date for any user-visible change.
 
 ## Known Gaps
 
 - Group-scoped leader authorization still needs tightening. Current `LEADERS` access is broader than the long-term target.
-- Automated test coverage is not yet in place for YAML validation, encryption round trips, scoring, PDF export, and authorization rules.
-- The sample program includes Week 5 only. The remaining seven weeks still need to be imported.
+- Automated test coverage is not yet in place for YAML validation, encryption round trips, scoring, and authorization rules.
+- `imports/` contains Weeks 1 and 2. Weeks 3-8 still need YAML and source PDFs.
+- `@aws-amplify/ui-react` is listed in `package.json` but not imported anywhere; remove it with `npm uninstall @aws-amplify/ui-react` (needs registry access to refresh `package-lock.json`).
