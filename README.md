@@ -9,10 +9,10 @@ Built with Next.js, TypeScript, AWS Amplify Gen 2, Amazon Cognito, AppSync, and 
 ## Current State
 
 - The app is branded for Priority One Deep Roots throughout the member, leader, and admin experiences.
-- The sample/import template currently contains Week 5 content only.
-- Week 5 follows the Deep Roots weekly mission format:
-  - `Weekly Missions`
-  - Monday-Friday `Growth & Challenge`
+- The sample/import templates in `imports/` currently contain Week 1 and Week 2 content.
+- Week content follows the Deep Roots weekly mission format:
+  - `Weekly Mission`
+  - Weekly `Chapter Challenge`
   - Monday-Friday `Spiritual Action: Reading and Reflection`
 - Repeated mission items support partial scoring with count buttons, such as `0 1 2 3` days completed.
 - The top-left brand mark and favicon use `public/logo.png`.
@@ -118,8 +118,9 @@ Then open the HTTPS URL shown by Next.js.
 - View team membership.
 - Import Deep Roots weekly content via YAML.
 - Preview the rendered member experience before publishing.
-- Publish one or more weeks to one or more teams.
-- Remove active weeks from teams.
+- Import one or more weeks to one or more teams.
+- Choose whether imported weeks are visible to members immediately.
+- Show or hide imported weeks for each team without deleting the imported content.
 - View program assignment status and import/replacement/removal audit events.
 - Manage Cognito `ADMINS` membership from the admin user panel.
 
@@ -131,8 +132,9 @@ The leaderboard page supports weekly and all-time views.
 - `Program Leaderboard` shows cumulative team totals for teams assigned to the same active program title.
 - Weekly view uses the selected week number.
 - All-time view uses cumulative score rows.
+- Program team scores are normalized as the team's average individual score multiplied by 3. For a 40-point week, the maximum team score is 120.
 
-Scores are derived from `SectionProgress` and persisted in `UserScore` by the `syncUserScore` backend function.
+Only visible imported weeks are loaded for members and included in score sync. Scores are derived from `SectionProgress` and persisted in `UserScore` by the `syncUserScore` backend function.
 
 ## Project Structure
 
@@ -218,6 +220,8 @@ sourcePdfUrl: /program-pdfs/deep-roots-week-1.pdf
 ```
 
 Store source PDFs in `public/program-pdfs/` using the convention `deep-roots-week-{weekNumber}.pdf`. The export button uses `sourcePdfUrl` when present and falls back to that naming convention for already-published weeks.
+
+Use [docs/deep-roots-yaml-reference.md](docs/deep-roots-yaml-reference.md) as the source of truth for Deep Roots YAML conventions, including source PDF handling, weekly mission naming, partial scoring, breath prayers, and import review checks. Update that guide whenever YAML behavior or content conventions change.
 
 Each section has a point value. Sections can optionally define partial completion fields:
 

@@ -207,7 +207,7 @@ export function Leaderboard() {
               >
                 {weekOptions.map((week) => (
                   <option key={week.weekNumber} value={week.weekNumber}>
-                    Week {week.weekNumber}: {week.title}
+                    Week {week.weekNumber}
                   </option>
                 ))}
               </select>
@@ -242,13 +242,13 @@ export function Leaderboard() {
           <LeaderboardList
             emptyMessage="No team member scores yet."
             rows={getSortedRows(individualRows, view)}
-            title="Team Leaderboard"
+            title="My Team's Leaderboard"
             view={view}
           />
           <LeaderboardList
             emptyMessage="No team scores yet."
             rows={getSortedTeamRows(teamRows, view)}
-            title="Program Leaderboard"
+            title="Deep Roots Team Leaderboard"
             view={view}
           />
         </div>

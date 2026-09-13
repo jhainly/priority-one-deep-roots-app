@@ -690,6 +690,37 @@ details[open] > .group-accordion-summary:hover {
   opacity: 0.68;
 }
 
+.completion-checklist {
+  display: grid;
+  gap: 8px;
+}
+
+.completion-check-item {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: flex;
+  gap: 10px;
+  min-height: 38px;
+  padding: 8px 10px;
+}
+
+.completion-check-item input {
+  height: 18px;
+  margin: 0;
+  width: 18px;
+}
+
+.completion-check-item span {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.completion-checklist.preview .completion-check-item {
+  opacity: 0.78;
+}
+
 .leaderboard-grid {
   align-items: start;
 }
@@ -790,6 +821,24 @@ details[open] > .group-accordion-summary:hover {
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 10px 12px;
+}
+
+.breath-prayer-row > div:first-child {
+  background: color-mix(in srgb, #e7f6ee 72%, var(--surface));
+  border-color: color-mix(in srgb, #2f8f5b 34%, var(--line));
+}
+
+.breath-prayer-row > div:first-child span {
+  color: #247047;
+}
+
+.breath-prayer-row > div:last-child {
+  background: color-mix(in srgb, #eef3ff 74%, var(--surface));
+  border-color: color-mix(in srgb, #4f6fb5 34%, var(--line));
+}
+
+.breath-prayer-row > div:last-child span {
+  color: #3f5f9e;
 }
 
 .breath-prayer-row span {

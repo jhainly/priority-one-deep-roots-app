@@ -161,7 +161,7 @@ export function Dashboard({ initialWeekNumber }: DashboardProps) {
       <section className="panel stack">
         <div>
           <h1>{activeGroup?.name ?? "Join your team"}</h1>
-          {program ? <p className="muted">{program.program.title}{program.program.description ? `: ${program.program.description}` : ""}</p> : null}
+          {program ? <p className="muted">Deep Roots: {getSelectedWeekTitle(program, selectedWeekNumber)}</p> : null}
           {activeGroup && !program ? <p className="muted">Your leader hasn&apos;t published a weekly mission for this team yet.</p> : null}
         </div>
         {groups.length > 1 ? (
@@ -176,15 +176,20 @@ export function Dashboard({ initialWeekNumber }: DashboardProps) {
             </select>
           </label>
         ) : null}
+        <div className="row">
+          <a className="button secondary" href="/drix-getting-started.pdf" download="DRIX Getting Started.pdf">
+            Download Getting Started Guide
+          </a>
+        </div>
         {program ? (
           <div className="stack">
             <ScoreBar
-              label="Week score"
+              label="Weekly Score"
               earned={scores.weeklyScore}
               max={scores.maxWeeklyScore}
             />
             <ScoreBar
-              label="Deep Roots total"
+              label="Total Score"
               earned={scores.cumulativeScore}
               max={scores.maxCumulativeScore}
             />
@@ -274,4 +279,8 @@ function getMaxWeeklyScore(program: Program, activeWeekNumber: number): number {
 
 function getNewestWeekNumber(program: Program): number {
   return program.weeks.reduce((newest, week) => Math.max(newest, week.weekNumber), 1);
+}
+
+function getSelectedWeekTitle(program: Program, selectedWeekNumber: number): string {
+  return program.weeks.find((week) => week.weekNumber === selectedWeekNumber)?.title ?? `Week ${selectedWeekNumber} Mission`;
 }

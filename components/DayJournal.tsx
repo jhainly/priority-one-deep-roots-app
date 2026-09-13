@@ -530,6 +530,12 @@ export function DayJournal({
     updateSectionProgress(section.id, getPointsFromCompletionCount(section, completionCount));
   }
 
+  function updateCompletionItem(section: ProgramSection, itemIndex: number, checked: boolean) {
+    const nextCompletionCount = checked ? itemIndex : itemIndex + 1;
+    updatePartialSection(section, nextCompletionCount);
+    void saveRef.current();
+  }
+
   function updateSectionProgress(sectionId: string, pointsEarned: number) {
     const nextPointsEarned = getClampedSectionPoints(
       day?.sections.find((candidate) => candidate.id === sectionId),
@@ -591,6 +597,22 @@ export function DayJournal({
     return Boolean(section.maxCompletions && section.maxCompletions > 1 && section.pointsPerCompletion);
   }
 
+  function hasCompletionItems(section: ProgramSection): boolean {
+    return Boolean(section.completionItems && section.completionItems.length > 0);
+  }
+
+  function shouldShowCompletionControl(section: ProgramSection): boolean {
+    return section.points > 0;
+  }
+
+  function shouldShowFallbackReflection(section: ProgramSection): boolean {
+    return section.points > 0 && !isPartialSection(section);
+  }
+
+  function shouldShowPointLabel(section: ProgramSection): boolean {
+    return section.points > 0 || isPartialSection(section);
+  }
+
   function getSectionMaxPoints(section?: ProgramSection): number {
     return Math.max(0, section?.points ?? 0);
   }
@@ -610,6 +632,10 @@ export function DayJournal({
 
   function getCompletionOptions(section: ProgramSection): number[] {
     return Array.from({ length: (section.maxCompletions ?? 0) + 1 }, (_, index) => index);
+  }
+
+  function getCompletionItems(section: ProgramSection) {
+    return section.completionItems ?? [];
   }
 
   function getPointsFromCompletionCount(section: ProgramSection, completionCount: number): number {
@@ -746,7 +772,7 @@ export function DayJournal({
       {isJournalLoaded && !needsReauth && day?.sections.map((section) => (
         <section className={`panel${(sectionPointsEarned[section.id] ?? 0) > 0 ? " section-complete" : ""}`} key={section.id}>
           <div className="section-layout">
-            {isPartialSection(section) ? (
+            {!shouldShowCompletionControl(section) || isPartialSection(section) ? (
               <span className="section-check" aria-hidden="true" />
             ) : (
               <label className="section-check" aria-label={`Mark ${section.title} complete`}>
@@ -760,32 +786,51 @@ export function DayJournal({
 
             <div className="section-content">
               <div>
-                <p className="eyebrow">{getSectionPointLabel(section)}</p>
+                {shouldShowPointLabel(section) ? <p className="eyebrow">{getSectionPointLabel(section)}</p> : null}
                 <h2>{section.title}</h2>
               </div>
               {section.body ? <p>{section.body}</p> : null}
               {isPartialSection(section) ? (
                 <div className="field compact-field">
                   <span>{getCompletionControlLabel(section)}</span>
-                  <div className="completion-picker" role="group" aria-label={getCompletionControlLabel(section)}>
-                    {getCompletionOptions(section).map((completionCount) => {
-                      const selected = completionCount === getCompletionCount(section, sectionPointsEarned[section.id] ?? 0);
+                  {hasCompletionItems(section) ? (
+                    <div className="completion-checklist" role="group" aria-label={getCompletionControlLabel(section)}>
+                      {getCompletionItems(section).map((item, itemIndex) => {
+                        const checked = itemIndex < getCompletionCount(section, sectionPointsEarned[section.id] ?? 0);
 
-                      return (
-                        <button
-                          className={selected ? "active" : ""}
-                          key={completionCount}
-                          onClick={() => {
-                            updatePartialSection(section, completionCount);
-                            void saveRef.current();
-                          }}
-                          type="button"
-                        >
-                          {completionCount}
-                        </button>
-                      );
-                    })}
-                  </div>
+                        return (
+                          <label className="completion-check-item" key={item.id}>
+                            <input
+                              checked={checked}
+                              onChange={() => updateCompletionItem(section, itemIndex, checked)}
+                              type="checkbox"
+                            />
+                            <span>{item.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="completion-picker" role="group" aria-label={getCompletionControlLabel(section)}>
+                      {getCompletionOptions(section).map((completionCount) => {
+                        const selected = completionCount === getCompletionCount(section, sectionPointsEarned[section.id] ?? 0);
+
+                        return (
+                          <button
+                            className={selected ? "active" : ""}
+                            key={completionCount}
+                            onClick={() => {
+                              updatePartialSection(section, completionCount);
+                              void saveRef.current();
+                            }}
+                            type="button"
+                          >
+                            {completionCount}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                   <small className="muted">
                     {sectionPointsEarned[section.id] ?? 0}/{section.points} points
                   </small>
@@ -855,7 +900,7 @@ export function DayJournal({
                       );
                     });
                   })()
-                : !needsReauth ? (() => {
+                : !needsReauth && shouldShowFallbackReflection(section) ? (() => {
                     const reflectionId = journalSectionReflectionKey(section.id);
                     const decryptFailed = failedAnswerKeys.includes(reflectionId);
                     const replacementApproved = approvedReplacementKeys.includes(reflectionId);

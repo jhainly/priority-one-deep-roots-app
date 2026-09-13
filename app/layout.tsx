@@ -7,10 +7,11 @@ import { ConfigureAmplify } from "@/components/ConfigureAmplify";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Priority One Deep Roots",
-  description: "An 8-week Priority One mission for spiritual, relational, and physical growth.",
+  title: "Deep Roots",
+  description:
+    "Deep Roots is an 8-week transformational training that equips men to build strong spiritual, relational, and physical foundations so they can flourish in every part of life.",
   icons: {
-    icon: "/logo.png"
+    icon: "/logo.png?v=deep-roots-20260912"
   }
 };
 
@@ -22,8 +23,16 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <div className="shell">
           <header className="topbar">
             <Link className="brand" href="/dashboard">
-              <Image className="brand-mark" src="/logo.png" alt="" aria-hidden="true" width={28} height={28} />
-              Priority One Deep Roots
+              <Image
+                className="brand-mark"
+                src="/logo.png?v=deep-roots-20260912"
+                alt=""
+                aria-hidden="true"
+                width={28}
+                height={28}
+                unoptimized
+              />
+              Deep Roots
             </Link>
             <AppNav />
           </header>

@@ -81,19 +81,23 @@ export type ActiveProgramSnapshot = {
 export type ActiveProgramWeekSummary = {
   groupCount: number;
   groupId: string;
+  isVisible: boolean;
   programId: string;
   title: string;
   weekNumber: number;
+  weekSnapshotId: string;
 };
 export type ProgramWeekAssignment = {
   groupId: string;
   groupName: string;
   weeks: Array<{
+    isVisible: boolean;
     programId: string;
     publishedAt: string;
     publishedByUserId: string;
     title: string;
     weekNumber: number;
+    weekSnapshotId: string;
   }>;
 };
 export type ProgramAuditEntry = {
@@ -656,7 +660,11 @@ export async function publishProgram(groupId: string, preview: ProgramImportPrev
   return result.ok ? { ok: true, data: result.data } : result;
 }
 
-export async function publishProgramWeeksToGroups(groupIds: string[], preview: ProgramImportPreview): Promise<ServiceResult<string>> {
+export async function publishProgramWeeksToGroups(
+  groupIds: string[],
+  preview: ProgramImportPreview,
+  options: { isVisible?: boolean } = {}
+): Promise<ServiceResult<string>> {
   try {
     await configureAmplify();
     const client = getDataClient();
@@ -673,6 +681,7 @@ export async function publishProgramWeeksToGroups(groupIds: string[], preview: P
       await publishWeeksForGroup({
         client,
         groupId,
+        isVisible: options.isVisible ?? true,
         now,
         program: preview.program,
         actorDisplayName,
@@ -682,7 +691,10 @@ export async function publishProgramWeeksToGroups(groupIds: string[], preview: P
 
     const weekLabel = preview.program.weeks.length === 1 ? "week" : "weeks";
     const teamLabel = uniqueGroupIds.length === 1 ? "team" : "teams";
-    return { ok: true, data: `Published ${preview.program.weeks.length} ${weekLabel} to ${uniqueGroupIds.length} ${teamLabel}.` };
+    return {
+      ok: true,
+      data: `${options.isVisible === false ? "Imported" : "Published"} ${preview.program.weeks.length} ${weekLabel} to ${uniqueGroupIds.length} ${teamLabel}.`
+    };
   } catch (error) {
     return serviceError(error);
   }
@@ -692,12 +704,13 @@ async function publishWeeksForGroup(input: {
   actorDisplayName: string;
   client: DataClient;
   groupId: string;
+  isVisible: boolean;
   now: string;
   program: Program;
   publishedByUserId: string;
 }): Promise<void> {
   const group = await input.client.models.Group.get({ groupId: input.groupId });
-  const activeWeeks = await listActiveWeekRecords(input.client, input.groupId);
+  const importedWeeks = await listImportedWeekRecords(input.client, input.groupId);
 
   for (const week of input.program.weeks) {
     const contentHash = await hashProgram({
@@ -705,13 +718,13 @@ async function publishWeeksForGroup(input: {
       weeks: [week]
     });
     const weekSnapshotId = `${input.groupId}:${input.program.program.id}:${week.weekNumber}:${contentHash}`;
-    const staleActiveWeeks = activeWeeks.filter(
+    const staleWeeks = importedWeeks.filter(
       (record) => record.weekNumber === week.weekNumber && record.weekSnapshotId !== weekSnapshotId
     );
-    const replacedWeekTitles = staleActiveWeeks.map((record) => record.title);
+    const replacedWeekTitles = staleWeeks.map((record) => record.title);
 
     await Promise.all(
-      staleActiveWeeks.map((record) =>
+      staleWeeks.map((record) =>
         requireSaved(
           input.client.models.GroupProgramWeek.update({
             weekSnapshotId: record.weekSnapshotId,
@@ -736,7 +749,7 @@ async function publishWeeksForGroup(input: {
           title: week.title,
           contentHash,
           content: JSON.stringify(week),
-          isActive: true,
+          isActive: input.isVisible,
           publishedByUserId: input.publishedByUserId,
           publishedAt: input.now,
           updatedAt: input.now
@@ -753,7 +766,7 @@ async function publishWeeksForGroup(input: {
           title: week.title,
           contentHash,
           content: JSON.stringify(week),
-          isActive: true,
+          isActive: input.isVisible,
           publishedByUserId: input.publishedByUserId,
           publishedAt: input.now,
           updatedAt: input.now
@@ -761,14 +774,14 @@ async function publishWeeksForGroup(input: {
     );
 
     await createProgramAuditEvent(input.client, {
-      action: staleActiveWeeks.length > 0 ? "replace_week" : "import_week",
+      action: staleWeeks.length > 0 ? "replace_week" : "import_week",
       actorDisplayName: input.actorDisplayName,
       actorUserId: input.publishedByUserId,
       createdAt: input.now,
       details:
-        staleActiveWeeks.length > 0
+        staleWeeks.length > 0
           ? `Replaced ${replacedWeekTitles.map((title) => `"${title}"`).join(", ")}.`
-          : "Imported as a new active week.",
+          : `Imported as a new ${input.isVisible ? "visible" : "hidden"} week.`,
       groupId: input.groupId,
       groupName: group.data?.name ?? input.groupId,
       programId: input.program.program.id,
@@ -795,6 +808,18 @@ async function listActiveWeekRecords(client: DataClient, groupId: string) {
       },
       isActive: {
         eq: true
+      }
+    }
+  });
+
+  return result.data;
+}
+
+async function listImportedWeekRecords(client: DataClient, groupId: string) {
+  const result = await client.models.GroupProgramWeek.list({
+    filter: {
+      groupId: {
+        eq: groupId
       }
     }
   });
@@ -914,25 +939,24 @@ export async function removeWeekFromGroups(input: {
 
 export async function listActiveProgramWeeksForGroups(groupIds: string[]): Promise<ServiceResult<ActiveProgramWeekSummary[]>> {
   try {
+    await configureAmplify();
+    const client = getDataClient();
     const uniqueGroupIds = Array.from(new Set(groupIds.map((groupId) => groupId.trim()).filter(Boolean)));
     const weeksByNumber = new Map<number, ActiveProgramWeekSummary>();
 
     for (const groupId of uniqueGroupIds) {
-      const active = await loadActiveProgramForGroup(groupId);
+      const importedWeeks = await listImportedWeekRecords(client, groupId);
 
-      if (!active.ok) {
-        continue;
-      }
-
-      for (const week of active.data.program.weeks) {
+      for (const week of importedWeeks) {
         const current = weeksByNumber.get(week.weekNumber);
-
         weeksByNumber.set(week.weekNumber, {
           groupCount: (current?.groupCount ?? 0) + 1,
           groupId,
-          programId: active.data.programId,
+          isVisible: week.isActive,
+          programId: week.programId,
           title: current?.title ?? week.title,
-          weekNumber: week.weekNumber
+          weekNumber: week.weekNumber,
+          weekSnapshotId: week.weekSnapshotId
         });
       }
     }
@@ -952,18 +976,20 @@ export async function listProgramWeekAssignments(groups: AdminGroupSummary[]): P
     const client = getDataClient();
     const assignments = await Promise.all(
       groups.map(async (group) => {
-        const activeWeeks = await listActiveWeekRecords(client, group.groupId);
+        const importedWeeks = await listImportedWeekRecords(client, group.groupId);
 
         return {
           groupId: group.groupId,
           groupName: group.name,
-          weeks: activeWeeks
+          weeks: importedWeeks
             .map((week) => ({
+              isVisible: week.isActive,
               programId: week.programId,
               publishedAt: week.publishedAt,
               publishedByUserId: week.publishedByUserId,
               title: week.title,
-              weekNumber: week.weekNumber
+              weekNumber: week.weekNumber,
+              weekSnapshotId: week.weekSnapshotId
             }))
             .sort((left, right) => left.weekNumber - right.weekNumber)
         } satisfies ProgramWeekAssignment;
@@ -1030,18 +1056,18 @@ export async function previewWeekReplacementImpacts(input: {
     const impacts: WeekReplacementImpact[] = [];
 
     for (const groupId of uniqueGroupIds) {
-      const [group, activeWeeks] = await Promise.all([client.models.Group.get({ groupId }), listActiveWeekRecords(client, groupId)]);
+      const [group, importedWeeks] = await Promise.all([client.models.Group.get({ groupId }), listImportedWeekRecords(client, groupId)]);
 
-      for (const activeWeek of activeWeeks) {
-        const importedWeek = importedWeeksByNumber.get(activeWeek.weekNumber);
+      for (const existingWeek of importedWeeks) {
+        const importedWeek = importedWeeksByNumber.get(existingWeek.weekNumber);
 
         if (importedWeek) {
           impacts.push({
             groupId,
             groupName: group.data?.name ?? groupId,
-            existingTitle: activeWeek.title,
+            existingTitle: existingWeek.title,
             importedTitle: importedWeek.title,
-            weekNumber: activeWeek.weekNumber
+            weekNumber: existingWeek.weekNumber
           });
         }
       }
@@ -1122,6 +1148,57 @@ export async function listLeaderboard(input: {
   }
 }
 
+export async function setProgramWeekVisibility(input: {
+  groupId: string;
+  isVisible: boolean;
+  weekSnapshotId: string;
+}): Promise<ServiceResult<string>> {
+  try {
+    await configureAmplify();
+    const client = getDataClient();
+    const user = await getCurrentUser();
+    const actorDisplayName = await getDisplayName(user.userId);
+    const now = new Date().toISOString();
+    const [week, group] = await Promise.all([
+      client.models.GroupProgramWeek.get({ weekSnapshotId: input.weekSnapshotId }),
+      client.models.Group.get({ groupId: input.groupId })
+    ]);
+
+    if (!week.data || week.data.groupId !== input.groupId) {
+      return { ok: false, error: "That imported week could not be found for this team." };
+    }
+
+    await requireSaved(
+      client.models.GroupProgramWeek.update({
+        weekSnapshotId: input.weekSnapshotId,
+        isActive: input.isVisible,
+        updatedAt: now
+      }),
+      "The week visibility could not be updated."
+    );
+
+    await createProgramAuditEvent(client, {
+      action: input.isVisible ? "show_week" : "hide_week",
+      actorDisplayName,
+      actorUserId: user.userId,
+      createdAt: now,
+      details: input.isVisible ? "Made visible to team members." : "Hidden from team members.",
+      groupId: input.groupId,
+      groupName: group.data?.name ?? input.groupId,
+      programId: week.data.programId,
+      weekNumber: week.data.weekNumber,
+      weekTitle: week.data.title
+    });
+
+    return {
+      ok: true,
+      data: `Week ${week.data.weekNumber} is now ${input.isVisible ? "visible to" : "hidden from"} team members.`
+    };
+  } catch (error) {
+    return serviceError(error);
+  }
+}
+
 type ScoreListRow = {
   cumulativeScore: number;
   displayName: string;
@@ -1153,6 +1230,9 @@ type TeamUserScoreAccumulator = {
   latestUpdatedAt: string;
   weeklyScore: number;
   weeklyUpdatedAt: string;
+};
+type TeamScoreAccumulator = TeamLeaderboardRow & {
+  userCount: number;
 };
 
 function buildIndividualLeaderboardRows(rows: Array<ScoreListRow | null>, weekNumber: number): LeaderboardRow[] {
@@ -1206,7 +1286,7 @@ function buildTeamLeaderboardRows(
   programTitle: string
 ): TeamLeaderboardRow[] {
   const groupNames = new Map<string, string>();
-  const teamScoresByGroup = new Map<string, TeamLeaderboardRow>();
+  const teamScoresByGroup = new Map<string, TeamScoreAccumulator>();
   const teamScoresByUser = new Map<string, TeamUserScoreAccumulator>();
   const validScoreRows = scoreRows.filter((row): row is ScoreListRow => row != null);
   const comparableProgramIds = getComparableProgramIds(activeWeekRows, programId, programTitle);
@@ -1225,6 +1305,7 @@ function buildTeamLeaderboardRows(
         cumulativeScore: 0,
         groupId: group.groupId,
         groupName: group.name,
+        userCount: 0,
         weeklyScore: 0
       });
     }
@@ -1257,6 +1338,7 @@ function buildTeamLeaderboardRows(
         cumulativeScore: 0,
         groupId: row.groupId,
         groupName: groupNames.get(row.groupId) ?? row.groupId,
+        userCount: 0,
         weeklyScore: 0
       });
     }
@@ -1269,17 +1351,32 @@ function buildTeamLeaderboardRows(
         cumulativeScore: 0,
         groupId: userScore.groupId,
         groupName: groupNames.get(userScore.groupId) ?? userScore.groupId,
+        userCount: 0,
         weeklyScore: 0
-      } satisfies TeamLeaderboardRow);
+      } satisfies TeamScoreAccumulator);
 
     current.cumulativeScore += userScore.cumulativeScore;
     current.weeklyScore += userScore.weeklyScore;
+    current.userCount += 1;
     teamScoresByGroup.set(userScore.groupId, current);
   }
 
-  return Array.from(teamScoresByGroup.values()).sort(
-    (left, right) => right.weeklyScore - left.weeklyScore || left.groupName.localeCompare(right.groupName)
-  );
+  return Array.from(teamScoresByGroup.values())
+    .map(({ cumulativeScore, groupId, groupName, userCount, weeklyScore }) => ({
+      cumulativeScore: calculateTeamScore(cumulativeScore, userCount),
+      groupId,
+      groupName,
+      weeklyScore: calculateTeamScore(weeklyScore, userCount)
+    }))
+    .sort((left, right) => right.weeklyScore - left.weeklyScore || left.groupName.localeCompare(right.groupName));
+}
+
+function calculateTeamScore(totalIndividualScore: number, userCount: number): number {
+  if (userCount <= 0) {
+    return 0;
+  }
+
+  return Math.round((totalIndividualScore / userCount) * 3);
 }
 
 function getComparableProgramIds(

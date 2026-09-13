@@ -36,7 +36,7 @@ export function ProgramNavigator({ action, dayProgress = [], onSelectedWeekNumbe
           >
             {program.weeks.map((week) => (
               <option key={week.weekNumber} value={week.weekNumber}>
-                Week {week.weekNumber}: {week.title}
+                Week {week.weekNumber}
               </option>
             ))}
           </select>

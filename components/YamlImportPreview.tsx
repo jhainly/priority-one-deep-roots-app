@@ -43,6 +43,7 @@ export function YamlImportPreview({ embedded = false, groups: providedGroups, on
   const [errors, setErrors] = useState<string[]>([]);
   const [message, setMessage] = useState("");
   const [replacementImpacts, setReplacementImpacts] = useState<WeekReplacementImpact[]>([]);
+  const [isVisibleOnImport, setIsVisibleOnImport] = useState(true);
 
   useEffect(() => {
     if (providedGroups) {
@@ -132,7 +133,7 @@ export function YamlImportPreview({ embedded = false, groups: providedGroups, on
     }
 
     setSelectedGroupId(selectedGroupIds[0]);
-    const result = await publishProgramWeeksToGroups(selectedGroupIds, preview);
+    const result = await publishProgramWeeksToGroups(selectedGroupIds, preview, { isVisible: isVisibleOnImport });
     setMessage(result.ok ? result.data : result.error);
 
     if (result.ok) {
@@ -184,6 +185,14 @@ export function YamlImportPreview({ embedded = false, groups: providedGroups, on
           ) : (
             <p className="muted">Create a team before publishing a weekly mission.</p>
           )}
+          <label className="checkbox-row">
+            <input
+              checked={isVisibleOnImport}
+              onChange={(event) => setIsVisibleOnImport(event.target.checked)}
+              type="checkbox"
+            />
+            <span>Make imported weeks visible to team members immediately</span>
+          </label>
           <button className="button" type="button" onClick={validate}>
             Preview mission
           </button>
@@ -219,7 +228,7 @@ export function YamlImportPreview({ embedded = false, groups: providedGroups, on
             )}
             {replacementImpacts.length > 0 ? (
               <section className="warning-box stack">
-                <h3>Existing weekly missions will be replaced</h3>
+                <h3>Existing imported weekly missions will be replaced</h3>
                 <ul>
                   {replacementImpacts.map((impact) => (
                     <li key={`${impact.groupId}:${impact.weekNumber}`}>
@@ -238,7 +247,7 @@ export function YamlImportPreview({ embedded = false, groups: providedGroups, on
               weeks={preview.program.weeks}
             />
             <button className="button secondary" type="button" onClick={publish}>
-              Publish weekly mission
+              Import weekly mission
             </button>
           </>
         ) : (
@@ -263,7 +272,7 @@ function getReplacementConfirmationText(impacts: WeekReplacementImpact[]): strin
   );
 
   return [
-    "Publishing will replace existing active week content for the selected teams.",
+    "Importing will replace existing week content for the selected teams.",
     "",
     ...lines,
     "",
@@ -299,7 +308,7 @@ function RenderedProgramPreview({
           <select value={week.weekNumber} onChange={(event) => onWeekChange(Number(event.target.value))}>
             {weeks.map((candidate) => (
               <option key={candidate.weekNumber} value={candidate.weekNumber}>
-                Week {candidate.weekNumber}: {candidate.title}
+                Week {candidate.weekNumber}
               </option>
             ))}
           </select>
@@ -323,15 +332,6 @@ function RenderedProgramPreview({
             {getProgramDayDisplayName(day)}
           </h2>
           {week.summary ? <p>{week.summary}</p> : null}
-          {week.sourcePdfUrl ? (
-            <p>
-              <a href={week.sourcePdfUrl} rel="noreferrer" target="_blank">
-                Source PDF attached
-              </a>
-            </p>
-          ) : (
-            <p className="muted">No source PDF attached for this week.</p>
-          )}
         </div>
       </section>
 
@@ -350,7 +350,7 @@ function RenderedSectionPreview({ section }: { section: ProgramSection }) {
   return (
     <section className="render-preview-section">
       <div className="section-layout">
-        {partial ? (
+        {!shouldShowCompletionControl(section) || partial ? (
           <span className="section-check" aria-hidden="true" />
         ) : (
           <label className="section-check" aria-label={`Preview ${section.title} checkbox`}>
@@ -360,20 +360,31 @@ function RenderedSectionPreview({ section }: { section: ProgramSection }) {
 
         <div className="section-content">
           <div>
-            <p className="eyebrow">{getSectionPointLabel(section)}</p>
+            {shouldShowPointLabel(section) ? <p className="eyebrow">{getSectionPointLabel(section)}</p> : null}
             <h3>{section.title}</h3>
           </div>
           {section.body ? <p>{section.body}</p> : null}
           {partial ? (
             <div className="field preview-partial-control">
               <span>{getCompletionControlLabel(section)}</span>
-              <div className="completion-picker preview" role="group" aria-label={getCompletionControlLabel(section)}>
-                {getCompletionOptions(section).map((completionCount) => (
-                  <button className={completionCount === 0 ? "active" : ""} disabled key={completionCount} type="button">
-                    {completionCount}
-                  </button>
-                ))}
-              </div>
+              {hasCompletionItems(section) ? (
+                <div className="completion-checklist preview" role="group" aria-label={getCompletionControlLabel(section)}>
+                  {getCompletionItems(section).map((item) => (
+                    <label className="completion-check-item" key={item.id}>
+                      <input disabled type="checkbox" />
+                      <span>{item.label}</span>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="completion-picker preview" role="group" aria-label={getCompletionControlLabel(section)}>
+                  {getCompletionOptions(section).map((completionCount) => (
+                    <button className={completionCount === 0 ? "active" : ""} disabled key={completionCount} type="button">
+                      {completionCount}
+                    </button>
+                  ))}
+                </div>
+              )}
               <small>
                 Preview: 0/{section.points} points. Users can enter 0-{section.maxCompletions}{" "}
                 {pluralizeUnit(section.completionUnit ?? "completion", section.maxCompletions ?? 0)}.
@@ -419,6 +430,22 @@ function RenderedSectionPreview({ section }: { section: ProgramSection }) {
 
 function isPartialSection(section: ProgramSection): boolean {
   return Boolean(section.maxCompletions && section.maxCompletions > 1 && section.pointsPerCompletion);
+}
+
+function hasCompletionItems(section: ProgramSection): boolean {
+  return Boolean(section.completionItems && section.completionItems.length > 0);
+}
+
+function getCompletionItems(section: ProgramSection) {
+  return section.completionItems ?? [];
+}
+
+function shouldShowCompletionControl(section: ProgramSection): boolean {
+  return section.points > 0;
+}
+
+function shouldShowPointLabel(section: ProgramSection): boolean {
+  return section.points > 0 || isPartialSection(section);
 }
 
 function getSectionPointLabel(section: ProgramSection): string {
