@@ -195,13 +195,11 @@ export function Dashboard({ initialWeekNumber }: DashboardProps) {
             />
           </div>
         ) : null}
-        {!activeGroup ? (
-          <div className="row">
-            <Link className="button" href="/join">
-              Join team
-            </Link>
-          </div>
-        ) : null}
+        <div className="row">
+          <Link className={activeGroup ? "button secondary" : "button"} href="/join">
+            {activeGroup ? "Join another team" : "Join team"}
+          </Link>
+        </div>
         {groupStatus ? <p className="muted">{groupStatus}</p> : null}
         {programStatus ? <p className="muted">{programStatus}</p> : null}
         {status ? <p className="muted">{status}</p> : null}

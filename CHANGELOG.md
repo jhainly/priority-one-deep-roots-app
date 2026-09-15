@@ -9,6 +9,20 @@ date first.
 
 Entry types: `Added`, `Changed`, `Fixed`, `Removed`, `Content` (Deep Roots weekly material), `Docs`.
 
+## 2026-09-14
+
+### Added
+
+- "Resend code" button on the account verification step.
+- "Join another team" on the dashboard and "Join a team" on the account page, so members already on a team can join
+  a second one with a code (previously the join link only appeared for members with no team).
+- `npm run sandbox`, `sandbox:once`, and `sandbox:delete` scripts pinned to the `priorityone` AWS profile (us-east-2).
+
+### Docs
+
+- README documents the Priority One specific deployment: us-east-2, SES sender `deeproots-no-reply@priorityone.org`,
+  and the `https://deeproots.priorityone.org/` custom domain, none of which apply to the Lifepoint Men app.
+
 ## 2026-09-12
 
 ### Added

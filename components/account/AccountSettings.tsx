@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { clearSelectedGroupId, getSelectedGroupId, setSelectedGroupId } from "@/lib/groupSelection";
 import {
   changeCurrentUserPassword,
@@ -167,10 +168,15 @@ export function AccountSettings() {
       </form>
 
       <section className="panel stack">
-        <div>
-          <p className="eyebrow">Teams</p>
-          <h2>Team membership</h2>
-          <p>Leave a team if you no longer want it connected to this account.</p>
+        <div className="row">
+          <div>
+            <p className="eyebrow">Teams</p>
+            <h2>Team membership</h2>
+            <p>Join a new team with the code from your leader, or leave a team you no longer need.</p>
+          </div>
+          <Link className="button secondary" href="/join">
+            Join a team
+          </Link>
         </div>
         {groups.length > 0 ? (
           <ul className="list">

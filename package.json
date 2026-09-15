@@ -8,7 +8,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "sandbox": "ampx sandbox --profile priorityone",
+    "sandbox:once": "ampx sandbox --once --profile priorityone",
+    "sandbox:delete": "ampx sandbox delete --profile priorityone"
   },
   "dependencies": {
     "@aws-amplify/adapter-nextjs": "^1.7.3",

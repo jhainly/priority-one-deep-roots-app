@@ -45,6 +45,16 @@ npm run lint
 npm run build
 ```
 
+## Deployment, Domain, and Email (Priority One specific)
+
+This app is Priority One's deployment and carries Priority One infrastructure that its sibling, the Lifepoint Men app (`mens-group-journal`, the repo this one was forked from), intentionally does **not** have:
+
+- **Region:** production and sandbox run in **us-east-2**.
+- **Custom email sender:** Cognito sends verification and reset emails as `Deep Roots <deeproots-no-reply@priorityone.org>` through Amazon SES using the verified `priorityone.org` domain identity. This is configured in `amplify/auth/resource.ts` (`senders.email`) and `amplify/backend.ts` (`cfnUserPool.emailConfiguration` with the SES ARN). Setup steps and the DNS records live in [docs/production-email-setup.md](docs/production-email-setup.md).
+- **Custom domain:** the production site is served at **https://deeproots.priorityone.org/**, a Priority One custom domain configured in Amplify Hosting, rather than the default `amplifyapp.com` URL.
+
+When porting changes between the two apps, leave all of the above out of the Lifepoint app: it uses the Cognito default sender, the default Amplify Hosting domain, and us-east-1.
+
 ## Amplify Backend
 
 The backend is defined in:
@@ -57,21 +67,34 @@ The backend is defined in:
 Run a local sandbox backend:
 
 ```bash
-npx ampx sandbox
+npm run sandbox
 ```
 
-Run a one-time sandbox deploy:
+Run a one-time sandbox deploy, or delete the sandbox:
 
 ```bash
-npx ampx sandbox --once
+npm run sandbox:once
+npm run sandbox:delete
 ```
+
+The sandbox scripts always pass `--profile priorityone`, an AWS profile pinned to **us-east-2** (where this app's production stack lives), so the sandbox region never depends on the shell's default. Define it once in `~/.aws/config` alongside your existing SSO profile:
+
+```ini
+[profile priorityone]
+sso_session = <your sso session>
+sso_account_id = <account id>
+sso_role_name = <role>
+region = us-east-2
+```
+
+Avoid running `npx ampx sandbox` directly; without the profile it deploys to whatever region the shell resolves.
 
 This generates `amplify_outputs.json`, which points the local app at the sandbox Cognito and AppSync resources. That file is intentionally gitignored because it is environment-specific output.
 
 If AWS SSO credentials have expired:
 
 ```bash
-aws sso login
+aws sso login --sso-session <your sso session>
 ```
 
 ### Bootstrap Admin
@@ -80,7 +103,7 @@ For a sandbox where you need to bootstrap one admin user into the Cognito `ADMIN
 
 ```bash
 $env:DEEP_ROOTS_BOOTSTRAP_ADMIN_EMAIL="admin@example.com"
-npx ampx sandbox --once --identifier deep-roots --outputs-format json --outputs-out-dir .
+npx ampx sandbox --once --profile priorityone --identifier deep-roots --outputs-format json --outputs-out-dir .
 ```
 
 Keep that environment variable set on future deploys until you remove the bootstrap attachment intentionally.

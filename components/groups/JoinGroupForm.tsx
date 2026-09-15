@@ -32,7 +32,14 @@ export function JoinGroupForm({ accountConfirmed = false }: { accountConfirmed?:
     <form className="panel stack" onSubmit={handleSubmit}>
       <div>
         <h1>Join your team</h1>
-        {accountConfirmed ? <p className="muted">Your account is verified. Enter your team code to continue.</p> : null}
+        {accountConfirmed ? (
+          <p className="muted">Your account is verified. Enter your team code to continue.</p>
+        ) : (
+          <p className="muted">
+            Enter the code from your TEAM Captain. If you already belong to a team, this adds another one and switches
+            you to it; your existing teams stay available from the Team switcher.
+          </p>
+        )}
       </div>
       <label className="field">
         <span>Team code</span>
