@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { JournalExportButton } from "@/components/JournalExportButton";
-import { ProgramNavigator } from "@/components/ProgramNavigator";
+import { ProgramNavigator, type DayCompletionChange } from "@/components/ProgramNavigator";
 import { resolveSelectedGroup, setSelectedGroupId } from "@/lib/groupSelection";
 import {
   getCurrentUserScoreSummary,
   listCurrentUserGroups,
   loadActiveProgramForGroup,
+  setDashboardDayCompletion,
   type UserGroupSummary
 } from "@/lib/services/dataClient";
 import type { ScoreSummary } from "@/lib/scoring";
@@ -27,6 +28,7 @@ export function Dashboard({ initialWeekNumber }: DashboardProps) {
   const [groupStatus, setGroupStatus] = useState("Loading team...");
   const [programStatus, setProgramStatus] = useState("Loading weekly mission...");
   const [status, setStatus] = useState("Loading scores...");
+  const [updatingDayNumbers, setUpdatingDayNumbers] = useState<number[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -156,6 +158,42 @@ export function Dashboard({ initialWeekNumber }: DashboardProps) {
     setActiveGroup(nextGroup);
   }
 
+  async function updateDashboardDayCompletion(input: DayCompletionChange) {
+    if (!activeGroup || !program) {
+      return;
+    }
+
+    setUpdatingDayNumbers((current) => Array.from(new Set([...current, input.dayNumber])));
+    setStatus("Saving progress...");
+
+    const saveResult = await setDashboardDayCompletion({
+      groupId: activeGroup.groupId,
+      program,
+      ...input
+    });
+
+    if (!saveResult.ok) {
+      setStatus(saveResult.error);
+      setUpdatingDayNumbers((current) => current.filter((dayNumber) => dayNumber !== input.dayNumber));
+      return;
+    }
+
+    const scoreResult = await getCurrentUserScoreSummary({
+      groupId: activeGroup.groupId,
+      program,
+      activeWeekNumber: selectedWeekNumber
+    });
+
+    if (!scoreResult.ok) {
+      setStatus(scoreResult.error);
+    } else {
+      setScores(scoreResult.data);
+      setStatus("");
+    }
+
+    setUpdatingDayNumbers((current) => current.filter((dayNumber) => dayNumber !== input.dayNumber));
+  }
+
   return (
     <div className="stack">
       <section className="panel stack">
@@ -217,9 +255,11 @@ export function Dashboard({ initialWeekNumber }: DashboardProps) {
             ) : null
           }
           dayProgress={scores.dayProgress}
+          onDayCompletionChange={updateDashboardDayCompletion}
           onSelectedWeekNumberChange={setSelectedWeekNumber}
           program={program}
           selectedWeekNumber={selectedWeekNumber}
+          updatingDayNumbers={updatingDayNumbers}
         />
       ) : null}
     </div>
