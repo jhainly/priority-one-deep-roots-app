@@ -176,11 +176,13 @@ export function Dashboard({ initialWeekNumber }: DashboardProps) {
             </select>
           </label>
         ) : null}
-        <div className="row">
-          <a className="button secondary" href="/drix-getting-started.pdf" download="DRIX Getting Started.pdf">
-            Download Getting Started Guide
-          </a>
-        </div>
+        {program && selectedWeekNumber === 1 ? (
+          <div className="row">
+            <a className="button secondary" href="/drix-getting-started.pdf" download="DRIX Getting Started.pdf">
+              Download Getting Started Guide
+            </a>
+          </div>
+        ) : null}
         {program ? (
           <div className="stack">
             <ScoreBar
